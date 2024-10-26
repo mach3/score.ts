@@ -1,73 +1,73 @@
 interface ITone {
-	connect: (context: AudioContext, frequency: number) => void;
-	frequency: number;
-	start: () => void;
-	ping: () => void;
-	stop: () => void;
+  connect: (context: AudioContext, frequency: number) => void;
+  frequency: number;
+  start: () => void;
+  ping: () => void;
+  stop: () => void;
 }
 
 export class Tone implements ITone {
-	context?: AudioContext;
-	oscillator?: OscillatorNode;
-	gain?: GainNode;
-	timer?: number;
-	playing = false;
+  context?: AudioContext;
+  oscillator?: OscillatorNode;
+  gain?: GainNode;
+  timer?: number;
+  playing = false;
 
-	connect(context: AudioContext, frequency: number) {
-		this.context = context;
+  connect(context: AudioContext, frequency: number) {
+    this.context = context;
 
-		// oscillator
-		this.oscillator = this.context.createOscillator();
-		this.oscillator.frequency.value = frequency;
-		this.oscillator.type = "triangle";
+    // oscillator
+    this.oscillator = this.context.createOscillator();
+    this.oscillator.frequency.value = frequency;
+    this.oscillator.type = "triangle";
 
-		// gain
-		this.gain = this.context.createGain();
-		this.gain.gain.value = 0;
+    // gain
+    this.gain = this.context.createGain();
+    this.gain.gain.value = 0;
 
-		// connect
-		this.oscillator.connect(this.gain);
-		this.gain.connect(this.context.destination);
+    // connect
+    this.oscillator.connect(this.gain);
+    this.gain.connect(this.context.destination);
 
-		// start
-		this.oscillator.start();
-	}
+    // start
+    this.oscillator.start();
+  }
 
-	get frequency() {
-		return this.oscillator?.frequency.value || 0;
-	}
+  get frequency() {
+    return this.oscillator?.frequency.value || 0;
+  }
 
-	set frequency(value: number) {
-		if (this.oscillator) {
-			this.oscillator.frequency.value = value;
-		}
-	}
+  set frequency(value: number) {
+    if (this.oscillator) {
+      this.oscillator.frequency.value = value;
+    }
+  }
 
-	start() {
-		this.playing = true;
-		this.process();
-	}
+  start() {
+    this.playing = true;
+    this.process();
+  }
 
-	process() {
-		clearTimeout(this.timer);
-		if (!this.context || !this.gain || !this.playing) return;
-		const value = this.gain.gain.value;
-		if (value < 0.01) {
-			this.gain.gain.value = 0;
-		} else {
-			this.gain.gain.value = value * 0.8;
-		}
-		this.timer = window.setTimeout(() => this.process(), 33);
-	}
+  process() {
+    clearTimeout(this.timer);
+    if (!this.context || !this.gain || !this.playing) return;
+    const value = this.gain.gain.value;
+    if (value < 0.01) {
+      this.gain.gain.value = 0;
+    } else {
+      this.gain.gain.value = value * 0.8;
+    }
+    this.timer = window.setTimeout(() => this.process(), 33);
+  }
 
-	stop() {
-		clearTimeout(this.timer);
-		this.playing = false;
-	}
+  stop() {
+    clearTimeout(this.timer);
+    this.playing = false;
+  }
 
-	ping() {
-		if (this.playing && this.gain) {
-			this.gain.gain.value = 1;
-		}
-	}
+  ping() {
+    if (this.playing && this.gain) {
+      this.gain.gain.value = 1;
+    }
+  }
 }
