@@ -20,6 +20,9 @@ const u = {
   deepClone: (obj: any) => {
     return JSON.parse(JSON.stringify(obj));
   },
+  random: (): boolean => {
+    return Math.random() > 0.5;
+  },
 };
 
 export interface IScoreData {
@@ -52,6 +55,11 @@ interface IScore {
     value?: 0 | 1,
   ) => Error | undefined;
   setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
+  setSpeed: (speed: number) => Error | undefined;
+  randomize: (
+    measureIndex: number,
+    callback?: () => boolean,
+  ) => Error | undefined;
   play: () => void;
   stop: () => void;
 }
@@ -188,6 +196,32 @@ export class Score extends EventEmitter implements IScore {
       return new Error("measure index out of range");
     }
     this.data.chords.splice(measureIndex, 1, chord);
+    this.emit("change", { target: this });
+  }
+
+  setSpeed(speed: number): Error | undefined {
+    if (speed <= 0) {
+      return new Error("speed must be greater than zero");
+    }
+    this.data.speed = speed;
+    this.emit("change", { target: this });
+  }
+
+  randomize(
+    measureIndex: number,
+    callback: () => boolean = u.random,
+  ): Error | undefined {
+    if (!this.data.frames.at(measureIndex)) {
+      return new Error("measure index out of range");
+    }
+    const frames = this.data.frames[measureIndex].map((frame) => {
+      return frame.map(() => (callback() ? 1 : 0));
+    });
+    this.data.frames.splice(
+      measureIndex,
+      1,
+      frames as Fixed16Array<Fixed16Array<NumBool>>,
+    );
     this.emit("change", { target: this });
   }
 

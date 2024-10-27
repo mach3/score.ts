@@ -138,4 +138,23 @@ describe("Score Class", () => {
     expect(score.data.chords[1]).toBe("C7");
     expect(score.setChord(16, "C7")).toBeInstanceOf(Error);
   });
+
+  test("manupulate speed", () => {
+    const score = new Score();
+    expect(score.data.speed).toBe(8);
+    score.setSpeed(4);
+    expect(score.data.speed).toBe(4);
+    expect(score.setSpeed(0)).toBeInstanceOf(Error);
+    expect(score.setSpeed(-1)).toBeInstanceOf(Error);
+  });
+
+  test("randomize measure", () => {
+    const score = new Score();
+    score.addMeasure();
+    score.addMeasure();
+    score.randomize(1);
+    expect(score.data.frames[1]).not.toEqual(emptyMeasure);
+    score.randomize(1, () => false);
+    expect(score.data.frames[1]).toEqual(emptyMeasure);
+  });
 });

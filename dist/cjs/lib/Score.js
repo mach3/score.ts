@@ -13,6 +13,9 @@ const u = {
     deepClone: (obj) => {
         return JSON.parse(JSON.stringify(obj));
     },
+    random: () => {
+        return Math.random() > 0.5;
+    },
 };
 const DEFAULT_SCORE_DATA = {
     chords: ["A"],
@@ -130,6 +133,23 @@ class Score extends events_1.EventEmitter {
             return new Error("measure index out of range");
         }
         this.data.chords.splice(measureIndex, 1, chord);
+        this.emit("change", { target: this });
+    }
+    setSpeed(speed) {
+        if (speed <= 0) {
+            return new Error("speed must be greater than zero");
+        }
+        this.data.speed = speed;
+        this.emit("change", { target: this });
+    }
+    randomize(measureIndex, callback = u.random) {
+        if (!this.data.frames.at(measureIndex)) {
+            return new Error("measure index out of range");
+        }
+        const frames = this.data.frames[measureIndex].map((frame) => {
+            return frame.map(() => (callback() ? 1 : 0));
+        });
+        this.data.frames.splice(measureIndex, 1, frames);
         this.emit("change", { target: this });
     }
     play() {

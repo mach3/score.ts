@@ -15,6 +15,8 @@ interface IScore {
     removeMeasure: (index: number) => Error | undefined;
     toggleNote: (measureIndex: number, frameIndex: number, noteIndex: number, value?: 0 | 1) => Error | undefined;
     setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
+    setSpeed: (speed: number) => Error | undefined;
+    randomize: (measureIndex: number, callback?: () => boolean) => Error | undefined;
     play: () => void;
     stop: () => void;
 }
@@ -35,6 +37,8 @@ export declare class Score extends EventEmitter implements IScore {
     removeMeasure(index: number): Error | undefined;
     toggleNote(measureIndex: number, frameIndex: number, noteIndex: number, value?: 0 | 1): Error | undefined;
     setChord(measureIndex: number, chord: ChordName): Error | undefined;
+    setSpeed(speed: number): Error | undefined;
+    randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     play(): void;
     stop(): void;
     process(): void;
