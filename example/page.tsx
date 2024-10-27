@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { FaPlay, FaPause, FaTrash, FaPlus } from "react-icons/fa";
+import { FaPlay, FaPause, FaTrash, FaPlus, FaDiceTwo } from "react-icons/fa";
 import { CHORD_NAMES, type ChordName, Score, type IScoreData } from "../src";
 
 const PageBase = styled.div({
@@ -174,6 +174,17 @@ export function Page() {
                 <ControlButton
                   type="button"
                   onClick={() => {
+                    const e = score?.randomize(m);
+                    if (e instanceof Error) {
+                      alert(e.message);
+                    }
+                  }}
+                >
+                  <FaDiceTwo />
+                </ControlButton>
+                <ControlButton
+                  type="button"
+                  onClick={() => {
                     const e = score?.removeMeasure(m);
                     if (e instanceof Error) {
                       alert(e.message);
@@ -229,6 +240,15 @@ export function Page() {
         >
           <FaPause />
         </ControlButton>
+        <input
+          type="range"
+          min="4"
+          max="12"
+          value={score?.data.speed}
+          onChange={(e) => {
+            score?.setSpeed(Number(e.target.value));
+          }}
+        />
       </ControlBase>
     </PageBase>
   );

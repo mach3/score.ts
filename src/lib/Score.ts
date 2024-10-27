@@ -21,7 +21,7 @@ const u = {
     return JSON.parse(JSON.stringify(obj));
   },
   random: (): boolean => {
-    return Math.random() > 0.5;
+    return Math.random() > 0.75;
   },
 };
 
