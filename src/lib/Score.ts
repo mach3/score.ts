@@ -228,11 +228,21 @@ export class Score extends EventEmitter implements IScore {
   play() {
     this.playing = true;
     this.process();
+    if (this.context && this.tones) {
+      for (const tone of this.tones) {
+        tone.start();
+      }
+    }
   }
 
   stop() {
     clearTimeout(this.timer);
     this.playing = false;
+    if (this.context && this.tones) {
+      for (const tone of this.tones) {
+        tone.stop();
+      }
+    }
   }
 
   process() {

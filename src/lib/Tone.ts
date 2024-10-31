@@ -19,7 +19,7 @@ export class Tone implements ITone {
     // oscillator
     this.oscillator = this.context.createOscillator();
     this.oscillator.frequency.value = frequency;
-    this.oscillator.type = "triangle";
+    this.oscillator.type = "sine";
 
     // gain
     this.gain = this.context.createGain();
@@ -63,6 +63,9 @@ export class Tone implements ITone {
   stop() {
     clearTimeout(this.timer);
     this.playing = false;
+    if (this.context && this.gain) {
+      this.gain.gain.value = 0;
+    }
   }
 
   ping() {
