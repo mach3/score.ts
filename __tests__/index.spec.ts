@@ -87,7 +87,6 @@ describe("Score Class", () => {
     score.addMeasure("F");
     expect(score.data.frames.length).toBe(5);
     expect(score.data.frames.at(-1)).toEqual(emptyMeasure);
-    console.log(score.data.frames.at(-1));
     expect(score.data.chords.at(-1)).toBe("F");
 
     // add measure without chord
