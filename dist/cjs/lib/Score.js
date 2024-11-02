@@ -14,7 +14,7 @@ const u = {
         return JSON.parse(JSON.stringify(obj));
     },
     random: () => {
-        return Math.random() > 0.5;
+        return Math.random() > 0.75;
     },
 };
 const DEFAULT_SCORE_DATA = {
@@ -155,10 +155,21 @@ class Score extends events_1.EventEmitter {
     play() {
         this.playing = true;
         this.process();
+        if (this.context && this.tones) {
+            for (const tone of this.tones) {
+                tone.start();
+            }
+        }
     }
     stop() {
         clearTimeout(this.timer);
+        this.timer = undefined;
         this.playing = false;
+        if (this.context && this.tones) {
+            for (const tone of this.tones) {
+                tone.stop();
+            }
+        }
     }
     process() {
         if (this.tones === undefined)
@@ -187,7 +198,7 @@ class Score extends events_1.EventEmitter {
         });
         this.currentFrame =
             (this.currentFrame + 1) % (this.data.frames.length * 16);
-        this.timer = window.setTimeout(() => this.process(), 1000 / this.data.speed);
+        this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);
         this.emit("process", { target: this });
     }
 }

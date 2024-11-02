@@ -228,11 +228,22 @@ export class Score extends EventEmitter implements IScore {
   play() {
     this.playing = true;
     this.process();
+    if (this.context && this.tones) {
+      for (const tone of this.tones) {
+        tone.start();
+      }
+    }
   }
 
   stop() {
     clearTimeout(this.timer);
+    this.timer = undefined;
     this.playing = false;
+    if (this.context && this.tones) {
+      for (const tone of this.tones) {
+        tone.stop();
+      }
+    }
   }
 
   process() {
@@ -260,10 +271,10 @@ export class Score extends EventEmitter implements IScore {
     });
     this.currentFrame =
       (this.currentFrame + 1) % (this.data.frames.length * 16);
-    this.timer = window.setTimeout(
+    this.timer = setTimeout(
       () => this.process(),
       1000 / this.data.speed,
-    );
+    ) as unknown as number;
     this.emit("process", { target: this });
   }
 }

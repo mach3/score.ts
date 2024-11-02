@@ -19,6 +19,20 @@ describe("Score Class", () => {
     speed: 8,
   } as IScoreData;
 
+  const mockAudioContext = {
+    createOscillator: jest.fn(() => ({
+      frequency: { value: 0 },
+      type: "sine",
+      connect: jest.fn(),
+      start: jest.fn(),
+    })),
+    createGain: jest.fn(() => ({
+      gain: { value: 0 },
+      connect: jest.fn(),
+    })),
+    destination: {},
+  };
+
   test("initialize", () => {
     const score = new Score();
     // 初期値が正しい
@@ -87,7 +101,6 @@ describe("Score Class", () => {
     score.addMeasure("F");
     expect(score.data.frames.length).toBe(5);
     expect(score.data.frames.at(-1)).toEqual(emptyMeasure);
-    console.log(score.data.frames.at(-1));
     expect(score.data.chords.at(-1)).toBe("F");
 
     // add measure without chord
@@ -156,5 +169,17 @@ describe("Score Class", () => {
     expect(score.data.frames[1]).not.toEqual(emptyMeasure);
     score.randomize(1, () => false);
     expect(score.data.frames[1]).toEqual(emptyMeasure);
+  });
+
+  test("play", () => {
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.play();
+    expect(score.playing).toBe(true);
+    expect(score.tones?.length).toBe(16);
+    expect(score.tones?.every((tone) => tone.playing)).toBe(true);
+    score.stop();
+    expect(score.playing).toBe(false);
+    expect(score.tones?.every((tone) => !tone.playing)).toBe(true);
   });
 });
