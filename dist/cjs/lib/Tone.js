@@ -10,7 +10,7 @@ class Tone {
         // oscillator
         this.oscillator = this.context.createOscillator();
         this.oscillator.frequency.value = frequency;
-        this.oscillator.type = "triangle";
+        this.oscillator.type = "sine";
         // gain
         this.gain = this.context.createGain();
         this.gain.gain.value = 0;
@@ -44,11 +44,15 @@ class Tone {
         else {
             this.gain.gain.value = value * 0.8;
         }
-        this.timer = window.setTimeout(() => this.process(), 33);
+        this.timer = setTimeout(() => this.process(), 33);
     }
     stop() {
         clearTimeout(this.timer);
+        this.timer = undefined;
         this.playing = false;
+        if (this.context && this.gain) {
+            this.gain.gain.value = 0;
+        }
     }
     ping() {
         if (this.playing && this.gain) {

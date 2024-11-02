@@ -57,11 +57,12 @@ export class Tone implements ITone {
     } else {
       this.gain.gain.value = value * 0.8;
     }
-    this.timer = window.setTimeout(() => this.process(), 33);
+    this.timer = setTimeout(() => this.process(), 33) as unknown as number;
   }
 
   stop() {
     clearTimeout(this.timer);
+    this.timer = undefined;
     this.playing = false;
     if (this.context && this.gain) {
       this.gain.gain.value = 0;
