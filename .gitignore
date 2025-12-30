@@ -2,3 +2,5 @@ node_modules
 .parcel-cache
 .parcel-dist
 coverage
+/.docs
+
