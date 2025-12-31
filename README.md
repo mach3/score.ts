@@ -85,9 +85,13 @@ score.stop();
 ### IScoreData インターフェース
 
 ```typescript
+interface Measure {
+  chord: ChordName;
+  frames: number[][];  // フレーム(16) × ノート(16)
+}
+
 interface IScoreData {
-  chords: ChordName[];  // 各小節のコード
-  frames: number[][][]; // 小節 × フレーム(16) × ノート(16)
+  measures: Measure[];  // 小節の配列（最大16）
   speed: number;        // 再生速度（フレーム/秒）
 }
 ```
@@ -114,6 +118,9 @@ npm install
 
 # ビルド
 npm run build
+
+# 型チェック
+npm run typecheck
 
 # テスト
 npm test

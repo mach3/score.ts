@@ -3,9 +3,12 @@ import { type ChordName } from "../const/chords_notes";
 import { Tone } from "./Tone";
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
 type NumBool = 0 | 1;
+interface Measure {
+    chord: ChordName;
+    frames: Fixed16Array<Fixed16Array<NumBool>>;
+}
 export interface IScoreData {
-    chords: Array<ChordName>;
-    frames: Array<Fixed16Array<Fixed16Array<NumBool>>>;
+    measures: Measure[];
     speed: number;
 }
 interface IScore {

@@ -17,14 +17,17 @@ const u = {
         return Math.random() > 0.75;
     },
 };
+const createEmptyFrames = () => {
+    return Array.from({ length: 16 }).map(() => {
+        return Array.from({ length: 16 }).map(() => 0);
+    });
+};
 const DEFAULT_SCORE_DATA = {
-    chords: ["A"],
-    frames: [
-        [
-            ...Array.from({ length: 16 }).map(() => {
-                return Array.from({ length: 16 }).map(() => 0);
-            }),
-        ],
+    measures: [
+        {
+            chord: "A",
+            frames: createEmptyFrames(),
+        },
     ],
     speed: 8,
 };
@@ -34,7 +37,7 @@ class Score extends events_1.EventEmitter {
         this.playing = false;
         this.currentFrame = 0;
         this.data = u.deepClone(DEFAULT_SCORE_DATA);
-        this.currentChord = this.data.chords[0];
+        this.currentChord = this.data.measures[0].chord;
     }
     connect(context) {
         this.context = context || new AudioContext();
@@ -53,23 +56,22 @@ class Score extends events_1.EventEmitter {
     validate(data) {
         if (!data)
             return;
-        if (data.chords !== undefined) {
-            if (!Array.isArray(data.chords) ||
-                !data.chords.every((chord) => chords_notes_1.CHORD_NAMES.includes(chord))) {
-                return new Error("invalid chords values");
+        if (data.measures !== undefined) {
+            if (!Array.isArray(data.measures) || data.measures.length > 16) {
+                return new Error("invalid measures values");
             }
-        }
-        if (data.frames !== undefined) {
-            if (!Array.isArray(data.frames) ||
-                data.frames.length > 16 ||
-                !data.frames.every((measure) => {
-                    return (measure.length === 16 &&
-                        measure.every((frame) => {
-                            return (frame.length === 16 &&
-                                frame.every((note) => [0, 1].includes(note)));
-                        }));
-                })) {
-                return new Error("invalid frames values");
+            for (const measure of data.measures) {
+                if (!chords_notes_1.CHORD_NAMES.includes(measure.chord)) {
+                    return new Error("invalid chord value");
+                }
+                if (!Array.isArray(measure.frames) ||
+                    measure.frames.length !== 16 ||
+                    !measure.frames.every((frame) => {
+                        return (frame.length === 16 &&
+                            frame.every((note) => [0, 1].includes(note)));
+                    })) {
+                    return new Error("invalid frames values");
+                }
             }
         }
         if (data.speed !== undefined) {
@@ -86,7 +88,7 @@ class Score extends events_1.EventEmitter {
                 tone.stop();
             }
         }
-        this.currentChord = this.data.chords[0];
+        this.currentChord = this.data.measures[0].chord;
         this.tones = (0, chords_notes_1.getChordNotes)(this.currentChord).map((frequency) => {
             const tone = new Tone_1.Tone();
             tone.connect(this.context, frequency);
@@ -95,44 +97,48 @@ class Score extends events_1.EventEmitter {
         });
     }
     addMeasure(chord) {
-        if (this.data.chords.length >= 16) {
+        if (this.data.measures.length >= 16) {
             return new Error("measure limit exceeded");
         }
-        this.data.chords.push(chord || this.data.chords.at(-1));
-        this.data.frames.push(u.deepClone(DEFAULT_SCORE_DATA).frames[0]);
+        const lastMeasure = this.data.measures.at(-1);
+        this.data.measures.push({
+            chord: chord || (lastMeasure === null || lastMeasure === void 0 ? void 0 : lastMeasure.chord),
+            frames: createEmptyFrames(),
+        });
         this.emit("change", { target: this });
     }
     removeMeasure(index) {
-        if (this.data.chords.length === 1) {
+        if (this.data.measures.length === 1) {
             return new Error("measure cannot be zero");
         }
-        if (!this.data.chords.at(index)) {
+        if (!this.data.measures.at(index)) {
             return new Error("measure index out of range");
         }
-        this.data.chords.splice(index, 1);
-        this.data.frames.splice(index, 1);
+        this.data.measures.splice(index, 1);
         this.emit("change", { target: this });
     }
     toggleNote(measureIndex, frameIndex, noteIndex, value) {
-        if (this.data.frames.at(measureIndex) === undefined) {
+        const measure = this.data.measures.at(measureIndex);
+        if (measure === undefined) {
             return new Error("measure index out of range");
         }
-        if (this.data.frames[measureIndex].at(frameIndex) === undefined) {
+        if (measure.frames.at(frameIndex) === undefined) {
             return new Error("frame index out of range");
         }
-        if (this.data.frames[measureIndex][frameIndex].at(noteIndex) === undefined) {
+        if (measure.frames[frameIndex].at(noteIndex) === undefined) {
             return new Error("note index out of range");
         }
-        const v = this.data.frames[measureIndex][frameIndex][noteIndex];
-        this.data.frames[measureIndex][frameIndex][noteIndex] =
+        const v = measure.frames[frameIndex][noteIndex];
+        measure.frames[frameIndex][noteIndex] =
             value !== undefined ? value : v === 1 ? 0 : 1;
         this.emit("change", { target: this });
     }
     setChord(measureIndex, chord) {
-        if (!this.data.chords.at(measureIndex)) {
+        const measure = this.data.measures.at(measureIndex);
+        if (!measure) {
             return new Error("measure index out of range");
         }
-        this.data.chords.splice(measureIndex, 1, chord);
+        measure.chord = chord;
         this.emit("change", { target: this });
     }
     setSpeed(speed) {
@@ -143,13 +149,14 @@ class Score extends events_1.EventEmitter {
         this.emit("change", { target: this });
     }
     randomize(measureIndex, callback = u.random) {
-        if (!this.data.frames.at(measureIndex)) {
+        const measure = this.data.measures.at(measureIndex);
+        if (!measure) {
             return new Error("measure index out of range");
         }
-        const frames = this.data.frames[measureIndex].map((frame) => {
+        const frames = measure.frames.map((frame) => {
             return frame.map(() => (callback() ? 1 : 0));
         });
-        this.data.frames.splice(measureIndex, 1, frames);
+        measure.frames = frames;
         this.emit("change", { target: this });
     }
     play() {
@@ -178,15 +185,16 @@ class Score extends events_1.EventEmitter {
         if (!this.playing)
             return;
         const measureIndex = Math.floor(this.currentFrame / 16);
+        const measure = this.data.measures.at(measureIndex);
         // NOTE: removeMeasure で再生中のフレームが消えた場合は rewind する
-        if (!this.data.frames.at(measureIndex)) {
+        if (!measure) {
             this.currentFrame = 0;
             this.process();
             return;
         }
-        const frame = this.data.frames[measureIndex][this.currentFrame % 16];
-        if (this.data.chords[measureIndex] !== this.currentChord) {
-            this.currentChord = this.data.chords[measureIndex];
+        const frame = measure.frames[this.currentFrame % 16];
+        if (measure.chord !== this.currentChord) {
+            this.currentChord = measure.chord;
             this.tones.forEach((tone, index) => {
                 tone.frequency = (0, chords_notes_1.getChordNotes)(this.currentChord)[index];
             });
@@ -197,7 +205,7 @@ class Score extends events_1.EventEmitter {
             }
         });
         this.currentFrame =
-            (this.currentFrame + 1) % (this.data.frames.length * 16);
+            (this.currentFrame + 1) % (this.data.measures.length * 16);
         this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);
         this.emit("process", { target: this });
     }

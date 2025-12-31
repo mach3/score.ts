@@ -5,17 +5,16 @@ describe("Score Class", () => {
     return Array.from({ length: 16 }).map(() => 0);
   });
 
+  const chordNames: ChordName[] = ["A", "C7", "Dm7", "G"];
   const dummyData = {
-    chords: ["A", "C7", "Dm7", "G"],
-    frames: [
-      ...Array.from({ length: 4 }).map(() => {
-        return Array.from({ length: 16 }).map(() => {
-          return Array.from({ length: 16 }).map(() =>
-            Math.random() > 0.5 ? 1 : 0,
-          );
-        });
+    measures: chordNames.map((chord) => ({
+      chord,
+      frames: Array.from({ length: 16 }).map(() => {
+        return Array.from({ length: 16 }).map(() =>
+          Math.random() > 0.5 ? 1 : 0,
+        );
       }),
-    ],
+    })),
     speed: 8,
   } as IScoreData;
 
@@ -36,51 +35,52 @@ describe("Score Class", () => {
   test("initialize", () => {
     const score = new Score();
     // 初期値が正しい
-    expect(score.data.chords).toEqual(["A"]);
-    expect(score.data.frames).toEqual([emptyMeasure]);
+    expect(score.data.measures.length).toBe(1);
+    expect(score.data.measures[0].chord).toBe("A");
+    expect(score.data.measures[0].frames).toEqual(emptyMeasure);
     expect(score.data.speed).toBe(8);
   });
 
   test("validate data when initialize", () => {
     const score = new Score();
 
-    // check chords error
+    // check measures error (not array)
     expect(
-      score.init({ chords: 1 as unknown as IScoreData["chords"] }),
-    ).toBeInstanceOf(Error);
-    expect(
-      score.init({
-        chords: ["A", "B", "X"] as unknown as IScoreData["chords"],
-      }),
+      score.init({ measures: 1 as unknown as IScoreData["measures"] }),
     ).toBeInstanceOf(Error);
 
-    // check frames error
+    // check measures error (invalid chord)
     expect(
       score.init({
-        frames: 1 as unknown as IScoreData["frames"],
-      }),
+        measures: [{ chord: "X" as ChordName, frames: emptyMeasure }],
+      } as IScoreData),
+    ).toBeInstanceOf(Error);
+
+    // check measures error (invalid frames)
+    expect(
+      score.init({
+        measures: [{ chord: "A", frames: 1 }],
+      } as unknown as IScoreData),
     ).toBeInstanceOf(Error);
     expect(
       score.init({
-        frames: [1] as unknown as IScoreData["frames"],
-      }),
+        measures: [{ chord: "A", frames: [1] }],
+      } as unknown as IScoreData),
     ).toBeInstanceOf(Error);
     expect(
       score.init({
-        frames: [[1]] as unknown as IScoreData["frames"],
-      }),
+        measures: [{ chord: "A", frames: [[1]] }],
+      } as unknown as IScoreData),
     ).toBeInstanceOf(Error);
     expect(
       score.init({
-        frames: [[[1]]] as unknown as IScoreData["frames"],
-      }),
-    ).toBeInstanceOf(Error);
-    expect(
-      score.init({
-        frames: [
-          [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-        ] as unknown as IScoreData["frames"],
-      }),
+        measures: [
+          {
+            chord: "A",
+            frames: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+          },
+        ],
+      } as unknown as IScoreData),
     ).toBeInstanceOf(Error);
 
     // check speed
@@ -99,19 +99,25 @@ describe("Score Class", () => {
     score.init(dummyData);
     // add measure
     score.addMeasure("F");
-    expect(score.data.frames.length).toBe(5);
-    expect(score.data.frames.at(-1)).toEqual(emptyMeasure);
-    expect(score.data.chords.at(-1)).toBe("F");
+    expect(score.data.measures.length).toBe(5);
+    expect(score.data.measures.at(-1)?.frames).toEqual(emptyMeasure);
+    expect(score.data.measures.at(-1)?.chord).toBe("F");
 
     // add measure without chord
     score.addMeasure();
-    expect(score.data.frames.length).toBe(6);
-    expect(score.data.chords.at(-1)).toBe("F");
+    expect(score.data.measures.length).toBe(6);
+    expect(score.data.measures.at(-1)?.chord).toBe("F");
 
     // remove a measure
     score.removeMeasure(2);
-    expect(score.data.frames.length).toBe(5);
-    expect(score.data.chords).toEqual(["A", "C7", "G", "F", "F"]);
+    expect(score.data.measures.length).toBe(5);
+    expect(score.data.measures.map((m) => m.chord)).toEqual([
+      "A",
+      "C7",
+      "G",
+      "F",
+      "F",
+    ]);
 
     // remove measures to empty (error)
     score.removeMeasure(0);
@@ -134,9 +140,9 @@ describe("Score Class", () => {
     score.addMeasure();
 
     score.toggleNote(1, 0, 0);
-    expect(score.data.frames[1][0][0]).toBe(1);
+    expect(score.data.measures[1].frames[0][0]).toBe(1);
     score.toggleNote(1, 0, 0, 1);
-    expect(score.data.frames[1][0][0]).toBe(1);
+    expect(score.data.measures[1].frames[0][0]).toBe(1);
 
     expect(score.toggleNote(16, 0, 0)).toBeInstanceOf(Error);
     expect(score.toggleNote(0, 16, 0)).toBeInstanceOf(Error);
@@ -146,9 +152,9 @@ describe("Score Class", () => {
   test("manupulate chord", () => {
     const score = new Score();
     score.addMeasure();
-    expect(score.data.chords[1]).toBe("A");
+    expect(score.data.measures[1].chord).toBe("A");
     score.setChord(1, "C7");
-    expect(score.data.chords[1]).toBe("C7");
+    expect(score.data.measures[1].chord).toBe("C7");
     expect(score.setChord(16, "C7")).toBeInstanceOf(Error);
   });
 
@@ -166,9 +172,9 @@ describe("Score Class", () => {
     score.addMeasure();
     score.addMeasure();
     score.randomize(1);
-    expect(score.data.frames[1]).not.toEqual(emptyMeasure);
+    expect(score.data.measures[1].frames).not.toEqual(emptyMeasure);
     score.randomize(1, () => false);
-    expect(score.data.frames[1]).toEqual(emptyMeasure);
+    expect(score.data.measures[1].frames).toEqual(emptyMeasure);
   });
 
   test("play", () => {

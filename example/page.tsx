@@ -142,11 +142,11 @@ export function Page() {
     <PageBase>
       <h1>Score.ts</h1>
       <ScoreBase>
-        {data?.frames.map((measure, m) => {
+        {data?.measures.map((measure, m) => {
           return (
             <MeasureBase key={`measure-${m.toString()}`}>
               <MeasureInner>
-                {measure.map((frame, f) => {
+                {measure.frames.map((frame, f) => {
                   const frameIndex = m * 16 + f;
                   return (
                     <FrameBase
@@ -194,7 +194,7 @@ export function Page() {
                   <FaTrash />
                 </ControlButton>
                 <ChordSelect
-                  value={data.chords[m]}
+                  value={measure.chord}
                   onChange={(value) => {
                     const e = score?.setChord(m, value);
                     if (e instanceof Error) {
