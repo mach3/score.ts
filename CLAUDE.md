@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-score.ts is a TypeScript library for creating and playing musical scores using the Web Audio API. It provides a 16-step sequencer with chord-based tone generation, supporting major, minor, 7th, and minor 7th chords across all 12 keys.
+score.ts は Web Audio API を使った16ステップシーケンサーの TypeScript ライブラリ。コード（和音）ベースの音源生成をサポートし、メジャー/マイナー/7th/マイナー7th × 12キー = 48種類のコードに対応。
 
 ## Commands
 
@@ -14,6 +14,9 @@ npm install
 
 # Build (both ESM and CJS outputs)
 npm run build
+
+# Type check (no emit)
+npm run typecheck
 
 # Run tests
 npm test
@@ -34,36 +37,47 @@ npm run example
 
 ## Architecture
 
+### Public API (`src/index.ts`)
+
+エクスポートは `Score` クラス、`IScoreData` 型、`Tone` クラス、`ChordName` 型、`CHORD_NAMES` 定数。
+
 ### Core Classes
 
-- **Score** (`src/lib/Score.ts`): Main class that manages musical score data and playback
-  - Extends EventEmitter - emits `change` and `process` events
-  - Contains measures (up to 16), each with 16 frames, each frame with 16 notes
-  - Controls playback timing and chord switching
+- **Score** (`src/lib/Score.ts`): スコアデータの管理と再生を担うメインクラス
+  - `EventEmitter` を継承。`change`（データ変更時）と `process`（フレーム進行時）イベントを emit
+  - 最大16小節、各小節は16フレーム × 16ノートのグリッド構造
+  - 再生ループは `setTimeout` ベース。`process()` が再帰的にフレームを進行
+  - 操作メソッド（`toggleNote`, `addMeasure`, `setChord` 等）は失敗時に `Error` を返し、成功時は `undefined` を返すパターン（throw しない）
 
-- **Tone** (`src/lib/Tone.ts`): Web Audio oscillator wrapper
-  - Creates sine wave oscillators with gain envelope
-  - `ping()` method triggers note attack, auto-decays
+- **Tone** (`src/lib/Tone.ts`): Web Audio の OscillatorNode + GainNode のラッパー
+  - サイン波オシレーターにゲインエンベロープを付与
+  - `ping()` でゲインを1にセットし、`process()` の 33ms ループで 0.8 倍ずつ減衰
 
-### Data Structures
+### Data Structure
 
-`IScoreData` interface:
-- `chords: ChordName[]` - chord per measure
-- `frames: Fixed16Array<Fixed16Array<NumBool>>[]` - 16x16 grid per measure (frame x note)
-- `speed: number` - playback speed (frames per second)
+```typescript
+interface Measure {
+  chord: ChordName;                          // この小節のコード名
+  frames: Fixed16Array<Fixed16Array<NumBool>>; // 16フレーム × 16ノート
+}
 
-### Constants
+interface IScoreData {
+  measures: Measure[];  // 小節の配列（最大16）
+  speed: number;        // 再生速度（フレーム/秒、デフォルト8）
+}
+```
 
-- `src/const/chords.ts`: Chord-to-note-name mappings
-- `src/const/notes.ts`: Note-name-to-frequency mappings (Hz)
-- `src/const/chords_notes.ts`: Pre-calculated 16-note frequency arrays for each chord
+### Constants (`src/const/`)
+
+- `chords.ts`: コード名→構成音名のマッピング（例: "Am" → ["A", "C", "E"]）
+- `notes.ts`: 音名→周波数(Hz)のマッピング（A0〜C8）
+- `chords_notes.ts`: 各コードの16音分の周波数配列（事前計算済み）。`getChordNotes()` 関数と `ChordName` 型をエクスポート
 
 ## Build Output
 
-Dual package output:
-- ESM: `dist/esm/` (module: ESNext)
-- CJS: `dist/cjs/` (module: CommonJS)
+Dual package: ESM (`dist/esm/`, module: ESNext) と CJS (`dist/cjs/`, module: CommonJS)。`tsconfig.esm.json` / `tsconfig.cjs.json` がそれぞれの設定。
 
-## Testing
+## Code Style
 
-Jest with ts-jest preset. Tests are in `__tests__/` directory. AudioContext is mocked for testing playback functionality.
+- Formatter/Linter: Biome（インデント: スペース2つ、クォート: ダブルクォート）
+- TypeScript strict モード有効
