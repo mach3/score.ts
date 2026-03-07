@@ -1,4 +1,5 @@
-import { Score, type IScoreData, type ChordName } from "../src";
+import { type ChordName, type IScoreData, Score } from "../src";
+import { getChordNotes } from "../src/const/chords_notes";
 
 describe("Score Class", () => {
   const emptyMeasure = Array.from({ length: 16 }).map(() => {
@@ -31,6 +32,11 @@ describe("Score Class", () => {
     })),
     destination: {},
   };
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
 
   test("initialize", () => {
     const score = new Score();
@@ -177,7 +183,18 @@ describe("Score Class", () => {
     expect(score.data.measures[1].frames).toEqual(emptyMeasure);
   });
 
+  test("removeMeasure out of range", () => {
+    const score = new Score();
+    expect(score.removeMeasure(5)).toBeInstanceOf(Error);
+  });
+
+  test("randomize out of range", () => {
+    const score = new Score();
+    expect(score.randomize(5)).toBeInstanceOf(Error);
+  });
+
   test("play", () => {
+    jest.useFakeTimers();
     const score = new Score();
     score.connect(mockAudioContext as unknown as AudioContext);
     score.play();
@@ -187,5 +204,68 @@ describe("Score Class", () => {
     score.stop();
     expect(score.playing).toBe(false);
     expect(score.tones?.every((tone) => !tone.playing)).toBe(true);
+  });
+
+  test("initTones reinitializes existing tones", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    const firstTones = score.tones;
+    score.initTones();
+    expect(firstTones?.every((tone) => !tone.playing)).toBe(true);
+    expect(score.tones).not.toBe(firstTones);
+    score.stop();
+  });
+
+  test("process advances frame and handles chord change", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.init(dummyData);
+    score.initTones();
+    score.play();
+    expect(score.currentFrame).toBe(1);
+
+    // フレームを進めてコード切替を確認（小節境界を超える）
+    const frameTime = 1000 / score.data.speed;
+    jest.advanceTimersByTime(frameTime * 16);
+    expect(score.currentChord).toBe(score.data.measures[1].chord);
+
+    score.stop();
+  });
+
+  test("process rewinds when measure is removed during playback", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.addMeasure();
+    score.initTones();
+    score.play();
+
+    // 2小節目まで進める（16フレーム = 1小節分）
+    const frameTime = 1000 / score.data.speed;
+    jest.advanceTimersByTime(frameTime * 16);
+    expect(score.currentFrame).toBeGreaterThanOrEqual(17);
+
+    // 2小節目を削除 → process が rewind するはず
+    score.removeMeasure(1);
+    jest.advanceTimersByTime(frameTime);
+    expect(score.currentFrame).toBeLessThan(16);
+
+    score.stop();
+  });
+});
+
+describe("getChordNotes", () => {
+  test("returns notes for valid chord", () => {
+    const notes = getChordNotes("A");
+    expect(notes).toHaveLength(16);
+    expect(notes.every((n) => typeof n === "number")).toBe(true);
+  });
+
+  test("throws for invalid chord", () => {
+    expect(() => getChordNotes("InvalidChord" as never)).toThrow(
+      'Chord "InvalidChord" not found',
+    );
   });
 });

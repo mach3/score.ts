@@ -58,4 +58,11 @@ export const CHORDS_MAP = [
   { key: "G#7", value: ["G#", "C", "D#", "F#"] },
   { key: "G#m", value: ["G#", "B", "D#"] },
   { key: "G#m7", value: ["G#", "B", "D#", "F#"] },
+
+  { key: "Miyako", value: ["C", "C#", "F", "G", "G#"] },
+  { key: "Ritsu", value: ["C", "D", "F", "G", "A"] },
+  { key: "Minyo", value: ["C", "D", "F", "G", "A#"] },
+  { key: "Ryukyu", value: ["C", "E", "F", "G", "B"] },
+  { key: "Chinese", value: ["C", "D", "E", "G", "A"] },
+  { key: "Blues", value: ["C", "D#", "F", "F#", "G", "A#"] },
 ];
