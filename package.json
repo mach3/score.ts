@@ -16,7 +16,7 @@
   "author": "mach3",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.3",
+    "@biomejs/biome": "^2.4.6",
     "@parcel/transformer-sass": "^2.12.0",
     "@types/jest": "^29.5.13",
     "@types/node": "^22.7.5",
