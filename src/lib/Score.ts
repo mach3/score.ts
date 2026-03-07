@@ -12,11 +12,11 @@ type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
 type NumBool = 0 | 1;
 
 const u = {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
   getType: (value: any) => {
     return Object.prototype.toString.call(value).slice(8, -1);
   },
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: JSON経由のディープクローンのため任意の型を受け取る
   deepClone: (obj: any) => {
     return JSON.parse(JSON.stringify(obj));
   },

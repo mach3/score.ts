@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { FaDiceTwo, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa";
 import styled from "styled-components";
-import { FaPlay, FaPause, FaTrash, FaPlus, FaDiceTwo } from "react-icons/fa";
-import { CHORD_NAMES, type ChordName, Score, type IScoreData } from "../src";
+import { CHORD_NAMES, type ChordName, type IScoreData, Score } from "../src";
 
 const PageBase = styled.div({
   display: "grid",
