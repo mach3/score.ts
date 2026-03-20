@@ -1,5 +1,11 @@
-import { type ChordName, type IScoreData, Score } from "../src";
+import {
+  type ChordName,
+  type IScoreData,
+  type PresetName,
+  Score,
+} from "../src";
 import { getChordNotes } from "../src/const/chords_notes";
+import { getPreset } from "../src/const/presets";
 
 describe("Score Class", () => {
   const emptyMeasure = Array.from({ length: 16 }).map(() => {
@@ -20,16 +26,28 @@ describe("Score Class", () => {
   } as IScoreData;
 
   const mockAudioContext = {
+    currentTime: 0,
     createOscillator: jest.fn(() => ({
       frequency: { value: 0 },
       type: "sine",
       connect: jest.fn(),
       start: jest.fn(),
+      stop: jest.fn(),
+      disconnect: jest.fn(),
+      setPeriodicWave: jest.fn(),
     })),
     createGain: jest.fn(() => ({
-      gain: { value: 0 },
+      gain: {
+        value: 0,
+        cancelScheduledValues: jest.fn(),
+        setValueAtTime: jest.fn(),
+        linearRampToValueAtTime: jest.fn(),
+        exponentialRampToValueAtTime: jest.fn(),
+      },
       connect: jest.fn(),
+      disconnect: jest.fn(),
     })),
+    createPeriodicWave: jest.fn(() => ({})),
     destination: {},
   };
 
@@ -45,6 +63,7 @@ describe("Score Class", () => {
     expect(score.data.measures[0].chord).toBe("A");
     expect(score.data.measures[0].frames).toEqual(emptyMeasure);
     expect(score.data.speed).toBe(8);
+    expect(score.data.preset).toBe("Piano");
   });
 
   test("validate data when initialize", () => {
@@ -95,6 +114,17 @@ describe("Score Class", () => {
         speed: "1" as unknown as IScoreData["speed"],
       }),
     ).toBeInstanceOf(Error);
+
+    // check preset (invalid)
+    expect(
+      score.init({
+        preset: "InvalidPreset" as PresetName,
+      }),
+    ).toBeInstanceOf(Error);
+
+    // check preset (valid)
+    expect(score.init({ preset: "Organ" })).toBeUndefined();
+    expect(score.data.preset).toBe("Organ");
 
     // check dummy data
     expect(score.init(dummyData)).toBeUndefined();
@@ -162,6 +192,70 @@ describe("Score Class", () => {
     score.setChord(1, "C7");
     expect(score.data.measures[1].chord).toBe("C7");
     expect(score.setChord(16, "C7")).toBeInstanceOf(Error);
+  });
+
+  test("manupulate preset", () => {
+    const score = new Score();
+    expect(score.data.preset).toBe("Piano");
+
+    // 正常系
+    expect(score.setPreset("Organ")).toBeUndefined();
+    expect(score.data.preset).toBe("Organ");
+
+    expect(score.setPreset("Bell")).toBeUndefined();
+    expect(score.data.preset).toBe("Bell");
+
+    // 異常系
+    expect(score.setPreset("InvalidPreset" as PresetName)).toBeInstanceOf(
+      Error,
+    );
+    // 失敗後も前の値が保持される
+    expect(score.data.preset).toBe("Bell");
+  });
+
+  test("setPreset emits change event", () => {
+    const score = new Score();
+    const handler = jest.fn();
+    score.addListener("change", handler);
+
+    score.setPreset("Lead");
+    expect(handler).toHaveBeenCalled();
+  });
+
+  test("setPreset reinitializes tones when connected", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+
+    const firstTones = score.tones;
+    score.setPreset("Organ");
+
+    expect(score.tones).not.toBe(firstTones);
+    expect(firstTones?.every((tone) => !tone.playing)).toBe(true);
+    score.stop();
+  });
+
+  test("setPreset during playback does not double-schedule process", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.play();
+
+    const frameTime = 1000 / score.data.speed;
+    jest.advanceTimersByTime(frameTime * 2);
+    const frameBefore = score.currentFrame;
+
+    // setPreset 内で process() が同期的に1回走り +1、その後 timer で +1 = 合計 +2
+    score.setPreset("Organ");
+    jest.advanceTimersByTime(frameTime);
+    expect(score.currentFrame).toBe(frameBefore + 2);
+
+    // さらに1フレーム進めて正常にスケジュールされていることを確認
+    const frameAfter = score.currentFrame;
+    jest.advanceTimersByTime(frameTime);
+    expect(score.currentFrame).toBe(frameAfter + 1);
+
+    score.stop();
   });
 
   test("manupulate speed", () => {
@@ -266,6 +360,28 @@ describe("getChordNotes", () => {
   test("throws for invalid chord", () => {
     expect(() => getChordNotes("InvalidChord" as never)).toThrow(
       'Chord "InvalidChord" not found',
+    );
+  });
+});
+
+describe("getPreset", () => {
+  test("returns preset for valid name", () => {
+    const preset = getPreset("Piano");
+    expect(preset).toBeDefined();
+    expect(preset.waveType).toBe("custom");
+    expect(preset.adsr).toBeDefined();
+    expect(preset.adsr.attack).toBeGreaterThanOrEqual(0);
+  });
+
+  test("returns different presets for different names", () => {
+    const piano = getPreset("Piano");
+    const organ = getPreset("Organ");
+    expect(piano).not.toEqual(organ);
+  });
+
+  test("throws for invalid preset name", () => {
+    expect(() => getPreset("InvalidPreset")).toThrow(
+      'Preset "InvalidPreset" not found',
     );
   });
 });

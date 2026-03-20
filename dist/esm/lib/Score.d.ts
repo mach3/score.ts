@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { type ChordName } from "../const/chords_notes";
+import { type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
 type NumBool = 0 | 1;
@@ -10,6 +11,7 @@ interface Measure {
 export interface IScoreData {
     measures: Measure[];
     speed: number;
+    preset?: PresetName;
 }
 interface IScore {
     connect: (context: AudioContext) => void;
@@ -18,6 +20,7 @@ interface IScore {
     removeMeasure: (index: number) => Error | undefined;
     toggleNote: (measureIndex: number, frameIndex: number, noteIndex: number, value?: 0 | 1) => Error | undefined;
     setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
+    setPreset: (preset: PresetName) => Error | undefined;
     setSpeed: (speed: number) => Error | undefined;
     randomize: (measureIndex: number, callback?: () => boolean) => Error | undefined;
     play: () => void;
@@ -25,6 +28,7 @@ interface IScore {
 }
 export declare class Score extends EventEmitter implements IScore {
     context?: AudioContext;
+    masterGain?: GainNode;
     data: IScoreData;
     tones?: Array<Tone>;
     timer?: number;
@@ -40,6 +44,7 @@ export declare class Score extends EventEmitter implements IScore {
     removeMeasure(index: number): Error | undefined;
     toggleNote(measureIndex: number, frameIndex: number, noteIndex: number, value?: 0 | 1): Error | undefined;
     setChord(measureIndex: number, chord: ChordName): Error | undefined;
+    setPreset(preset: PresetName): Error | undefined;
     setSpeed(speed: number): Error | undefined;
     randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     play(): void;

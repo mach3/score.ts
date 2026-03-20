@@ -5,6 +5,7 @@ import {
   type ChordName,
   getChordNotes,
 } from "../const/chords_notes";
+import { getPreset, PRESET_NAMES, type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
 
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
@@ -33,6 +34,7 @@ interface Measure {
 export interface IScoreData {
   measures: Measure[];
   speed: number;
+  preset?: PresetName;
 }
 
 const createEmptyFrames = (): Fixed16Array<Fixed16Array<NumBool>> => {
@@ -49,6 +51,7 @@ const DEFAULT_SCORE_DATA: IScoreData = {
     },
   ],
   speed: 8,
+  preset: "Piano",
 };
 
 interface IScore {
@@ -63,6 +66,7 @@ interface IScore {
     value?: 0 | 1,
   ) => Error | undefined;
   setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
+  setPreset: (preset: PresetName) => Error | undefined;
   setSpeed: (speed: number) => Error | undefined;
   randomize: (
     measureIndex: number,
@@ -74,13 +78,13 @@ interface IScore {
 
 export class Score extends EventEmitter implements IScore {
   context?: AudioContext;
+  masterGain?: GainNode;
   data: IScoreData;
   tones?: Array<Tone>;
   timer?: number;
   playing = false;
   currentChord: ChordName;
   currentFrame = 0;
-
   constructor() {
     super();
     this.data = u.deepClone(DEFAULT_SCORE_DATA);
@@ -89,6 +93,9 @@ export class Score extends EventEmitter implements IScore {
 
   connect(context?: AudioContext) {
     this.context = context || new AudioContext();
+    this.masterGain = this.context.createGain();
+    this.masterGain.gain.value = 1 / 16;
+    this.masterGain.connect(this.context.destination);
     this.initTones();
   }
 
@@ -132,6 +139,11 @@ export class Score extends EventEmitter implements IScore {
         return new Error("invalid speed value");
       }
     }
+    if (data.preset !== undefined) {
+      if (!PRESET_NAMES.includes(data.preset)) {
+        return new Error("invalid preset value");
+      }
+    }
   }
 
   initTones() {
@@ -142,9 +154,15 @@ export class Score extends EventEmitter implements IScore {
       }
     }
     this.currentChord = this.data.measures[0].chord;
+    const preset = getPreset(this.data.preset ?? "Piano");
     this.tones = getChordNotes(this.currentChord).map((frequency) => {
       const tone = new Tone();
-      tone.connect(this.context as AudioContext, frequency);
+      tone.connect(
+        this.context as AudioContext,
+        frequency,
+        preset,
+        this.masterGain as GainNode,
+      );
       tone.start();
       return tone;
     });
@@ -201,6 +219,23 @@ export class Score extends EventEmitter implements IScore {
       return new Error("measure index out of range");
     }
     measure.chord = chord;
+    this.emit("change", { target: this });
+  }
+
+  setPreset(preset: PresetName): Error | undefined {
+    const error = this.validate({ preset });
+    if (error instanceof Error) return error;
+    this.data.preset = preset;
+    if (this.context) {
+      const wasPlaying = this.playing;
+      clearTimeout(this.timer);
+      this.timer = undefined;
+      this.initTones();
+      if (wasPlaying) {
+        this.playing = true;
+        this.process();
+      }
+    }
     this.emit("change", { target: this });
   }
 
@@ -263,13 +298,14 @@ export class Score extends EventEmitter implements IScore {
     const frame = measure.frames[this.currentFrame % 16];
     if (measure.chord !== this.currentChord) {
       this.currentChord = measure.chord;
+      const notes = getChordNotes(this.currentChord);
       this.tones.forEach((tone, index) => {
-        tone.frequency = getChordNotes(this.currentChord)[index];
+        tone.frequency = notes[index];
       });
     }
     frame.forEach((flag, index) => {
       if (flag && this.tones) {
-        this.tones[index].ping();
+        this.tones[index].ping(1 / this.data.speed);
       }
     });
     this.currentFrame =
