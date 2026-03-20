@@ -5,11 +5,7 @@ import {
   type ChordName,
   getChordNotes,
 } from "../const/chords_notes";
-import {
-  getPreset,
-  PRESET_NAMES,
-  type PresetName,
-} from "../const/presets";
+import { getPreset, PRESET_NAMES, type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
 
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
@@ -161,7 +157,12 @@ export class Score extends EventEmitter implements IScore {
     const preset = getPreset(this.data.preset ?? "Piano");
     this.tones = getChordNotes(this.currentChord).map((frequency) => {
       const tone = new Tone();
-      tone.connect(this.context as AudioContext, frequency, preset, this.masterGain as GainNode);
+      tone.connect(
+        this.context as AudioContext,
+        frequency,
+        preset,
+        this.masterGain as GainNode,
+      );
       tone.start();
       return tone;
     });

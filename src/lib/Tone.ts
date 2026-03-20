@@ -20,7 +20,12 @@ export class Tone implements ITone {
   playing = false;
   adsr?: AdsrParams;
 
-  connect(context: AudioContext, frequency: number, preset: TonePreset, destination: AudioNode) {
+  connect(
+    context: AudioContext,
+    frequency: number,
+    preset: TonePreset,
+    destination: AudioNode,
+  ) {
     this.context = context;
     this.adsr = preset.adsr;
 
