@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { FaDiceTwo, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa";
 import styled from "styled-components";
-import { CHORD_NAMES, type ChordName, type IScoreData, Score } from "../src";
+import {
+  CHORD_NAMES,
+  type ChordName,
+  type IScoreData,
+  PRESET_NAMES,
+  type PresetName,
+  Score,
+} from "../src";
 
 const PageBase = styled.div({
   display: "grid",
@@ -114,6 +121,24 @@ function ChordSelect({ value, onChange }: ChordSelectProps): JSX.Element {
     >
       {list.map((chord) => {
         return <option key={chord}>{chord}</option>;
+      })}
+    </SelectBox>
+  );
+}
+
+interface PresetSelectProps {
+  value: PresetName;
+  onChange: (value: PresetName) => void;
+}
+
+function PresetSelect({ value, onChange }: PresetSelectProps): JSX.Element {
+  return (
+    <SelectBox
+      value={value}
+      onChange={(e) => onChange(e.target.value as PresetName)}
+    >
+      {PRESET_NAMES.map((preset) => {
+        return <option key={preset}>{preset}</option>;
       })}
     </SelectBox>
   );
@@ -240,6 +265,15 @@ export function Page() {
         >
           <FaPause />
         </ControlButton>
+        <PresetSelect
+          value={score?.data.preset ?? "Piano"}
+          onChange={(value) => {
+            const e = score?.setPreset(value);
+            if (e instanceof Error) {
+              alert(e.message);
+            }
+          }}
+        />
         <input
           type="range"
           min="4"
