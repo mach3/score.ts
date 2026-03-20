@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { CHORD_NAMES, getChordNotes, } from "../const/chords_notes";
-import { getPreset, PRESET_NAMES, } from "../const/presets";
+import { getPreset, PRESET_NAMES } from "../const/presets";
 import { Tone } from "./Tone";
 const u = {
     // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
