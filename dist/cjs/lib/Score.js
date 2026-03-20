@@ -3,13 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Score = void 0;
 const events_1 = require("events");
 const chords_notes_1 = require("../const/chords_notes");
+const presets_1 = require("../const/presets");
 const Tone_1 = require("./Tone");
 const u = {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
     getType: (value) => {
         return Object.prototype.toString.call(value).slice(8, -1);
     },
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: JSON経由のディープクローンのため任意の型を受け取る
     deepClone: (obj) => {
         return JSON.parse(JSON.stringify(obj));
     },
@@ -30,6 +31,7 @@ const DEFAULT_SCORE_DATA = {
         },
     ],
     speed: 8,
+    preset: "Piano",
 };
 class Score extends events_1.EventEmitter {
     constructor() {
@@ -41,6 +43,9 @@ class Score extends events_1.EventEmitter {
     }
     connect(context) {
         this.context = context || new AudioContext();
+        this.masterGain = this.context.createGain();
+        this.masterGain.gain.value = 1 / 16;
+        this.masterGain.connect(this.context.destination);
         this.initTones();
     }
     init(data) {
@@ -79,8 +84,14 @@ class Score extends events_1.EventEmitter {
                 return new Error("invalid speed value");
             }
         }
+        if (data.preset !== undefined) {
+            if (!presets_1.PRESET_NAMES.includes(data.preset)) {
+                return new Error("invalid preset value");
+            }
+        }
     }
     initTones() {
+        var _a;
         if (!this.context)
             return;
         if (this.tones) {
@@ -89,9 +100,10 @@ class Score extends events_1.EventEmitter {
             }
         }
         this.currentChord = this.data.measures[0].chord;
+        const preset = (0, presets_1.getPreset)((_a = this.data.preset) !== null && _a !== void 0 ? _a : "Piano");
         this.tones = (0, chords_notes_1.getChordNotes)(this.currentChord).map((frequency) => {
             const tone = new Tone_1.Tone();
-            tone.connect(this.context, frequency);
+            tone.connect(this.context, frequency, preset, this.masterGain);
             tone.start();
             return tone;
         });
@@ -139,6 +151,23 @@ class Score extends events_1.EventEmitter {
             return new Error("measure index out of range");
         }
         measure.chord = chord;
+        this.emit("change", { target: this });
+    }
+    setPreset(preset) {
+        const error = this.validate({ preset });
+        if (error instanceof Error)
+            return error;
+        this.data.preset = preset;
+        if (this.context) {
+            const wasPlaying = this.playing;
+            clearTimeout(this.timer);
+            this.timer = undefined;
+            this.initTones();
+            if (wasPlaying) {
+                this.playing = true;
+                this.process();
+            }
+        }
         this.emit("change", { target: this });
     }
     setSpeed(speed) {
@@ -195,13 +224,14 @@ class Score extends events_1.EventEmitter {
         const frame = measure.frames[this.currentFrame % 16];
         if (measure.chord !== this.currentChord) {
             this.currentChord = measure.chord;
+            const notes = (0, chords_notes_1.getChordNotes)(this.currentChord);
             this.tones.forEach((tone, index) => {
-                tone.frequency = (0, chords_notes_1.getChordNotes)(this.currentChord)[index];
+                tone.frequency = notes[index];
             });
         }
         frame.forEach((flag, index) => {
             if (flag && this.tones) {
-                this.tones[index].ping();
+                this.tones[index].ping(1 / this.data.speed);
             }
         });
         this.currentFrame =

@@ -2,18 +2,25 @@ export class Tone {
     constructor() {
         this.playing = false;
     }
-    connect(context, frequency) {
+    connect(context, frequency, preset, destination) {
         this.context = context;
+        this.adsr = preset.adsr;
         // oscillator
         this.oscillator = this.context.createOscillator();
         this.oscillator.frequency.value = frequency;
-        this.oscillator.type = "sine";
+        if (preset.waveType === "custom") {
+            const wave = this.context.createPeriodicWave(new Float32Array(preset.real), new Float32Array(preset.imag));
+            this.oscillator.setPeriodicWave(wave);
+        }
+        else {
+            this.oscillator.type = preset.waveType;
+        }
         // gain
         this.gain = this.context.createGain();
         this.gain.gain.value = 0;
         // connect
         this.oscillator.connect(this.gain);
-        this.gain.connect(this.context.destination);
+        this.gain.connect(destination);
         // start
         this.oscillator.start();
     }
@@ -28,32 +35,43 @@ export class Tone {
     }
     start() {
         this.playing = true;
-        this.process();
-    }
-    process() {
-        clearTimeout(this.timer);
-        if (!this.context || !this.gain || !this.playing)
-            return;
-        const value = this.gain.gain.value;
-        if (value < 0.01) {
-            this.gain.gain.value = 0;
-        }
-        else {
-            this.gain.gain.value = value * 0.8;
-        }
-        this.timer = setTimeout(() => this.process(), 33);
     }
     stop() {
-        clearTimeout(this.timer);
-        this.timer = undefined;
         this.playing = false;
         if (this.context && this.gain) {
-            this.gain.gain.value = 0;
+            const now = this.context.currentTime;
+            this.gain.gain.cancelScheduledValues(now);
+            this.gain.gain.setValueAtTime(0, now);
+        }
+        if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator.disconnect();
+            this.oscillator = undefined;
+        }
+        if (this.gain) {
+            this.gain.disconnect();
+            this.gain = undefined;
         }
     }
-    ping() {
-        if (this.playing && this.gain) {
-            this.gain.gain.value = 1;
+    ping(noteDuration) {
+        if (!this.playing || !this.gain || !this.context || !this.adsr)
+            return;
+        const now = this.context.currentTime;
+        const { attack, decay, sustain, release } = this.adsr;
+        // 前回のスケジュールをキャンセルしてリセット
+        this.gain.gain.cancelScheduledValues(now);
+        this.gain.gain.setValueAtTime(0, now);
+        // Attack: 0 → 1.0
+        this.gain.gain.linearRampToValueAtTime(1.0, now + attack);
+        // Decay: 1.0 → sustain
+        this.gain.gain.linearRampToValueAtTime(sustain, now + attack + decay);
+        // Release: sustain → 0（noteDuration または AD終了後の遅い方から開始）
+        if (release > 0) {
+            const releaseStart = Math.max(now + noteDuration, now + attack + decay);
+            // exponentialRampToValueAtTime はゼロを扱えないため、最低値を 0.0001 に制限
+            const sustainLevel = Math.max(sustain, 0.0001);
+            this.gain.gain.setValueAtTime(sustainLevel, releaseStart);
+            this.gain.gain.exponentialRampToValueAtTime(0.0001, releaseStart + release);
         }
     }
 }
