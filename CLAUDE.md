@@ -44,11 +44,12 @@ pnpm run example
 ### Core Classes
 
 - **Score** (`src/lib/Score.ts`): スコアデータの管理と再生を担うメインクラス
-  - `EventEmitter` を継承。`change`（データ変更時）と `process`（フレーム進行時）イベントを emit
+  - `EventTarget` を継承。`change`（データ変更時）と `process`（フレーム進行時）イベントを発火。リスナーは `e.target` から Score インスタンスを参照可能
+  - 型強化された `on(type, listener, options?)` ヘルパーを提供（標準の `addEventListener` も利用可能）
   - 最大16小節、各小節は16フレーム × 16ノートのグリッド構造
   - 再生ループは `setTimeout` ベース。`process()` が再帰的にフレームを進行
   - マスターゲインノード（`1/16`）で16音の同時発音時のクリッピングを防止
-  - 操作メソッド（`toggleNote`, `addMeasure`, `setChord`, `setPreset` 等）は失敗時に `Error` を返し、成功時は `undefined` を返すパターン（throw しない）
+  - 操作メソッド（`toggleNote`, `addMeasure`, `setChord`, `setPreset`, `seek` 等）は失敗時に `Error` を返し、成功時は `undefined` を返すパターン（throw しない）
 
 - **Tone** (`src/lib/Tone.ts`): Web Audio の OscillatorNode + GainNode のラッパー
   - プリセットに応じた波形タイプ（sine, square, sawtooth, triangle, custom PeriodicWave）を設定
