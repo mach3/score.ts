@@ -216,7 +216,7 @@ describe("Score Class", () => {
   test("setPreset emits change event", () => {
     const score = new Score();
     const handler = jest.fn();
-    score.addListener("change", handler);
+    score.on("change", handler);
 
     score.setPreset("Lead");
     expect(handler).toHaveBeenCalled();

@@ -1,7 +1,11 @@
-import { EventEmitter } from "node:events";
 import { type ChordName } from "../const/chords_notes";
 import { type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
+type ScoreEventName = "change" | "process";
+type ScoreEvent<K extends ScoreEventName> = Event & {
+    type: K;
+    target: Score;
+};
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
 type NumBool = 0 | 1;
 interface Measure {
@@ -27,7 +31,7 @@ interface IScore {
     stop: () => void;
     seek: (frame: number) => Error | undefined;
 }
-export declare class Score extends EventEmitter implements IScore {
+export declare class Score extends EventTarget implements IScore {
     context?: AudioContext;
     masterGain?: GainNode;
     data: IScoreData;
@@ -37,6 +41,8 @@ export declare class Score extends EventEmitter implements IScore {
     currentChord: ChordName;
     currentFrame: number;
     constructor();
+    on<K extends ScoreEventName>(type: K, listener: (event: ScoreEvent<K>) => void, options?: AddEventListenerOptions | boolean): void;
+    private emit;
     connect(context?: AudioContext): void;
     init(data?: Partial<IScoreData>): Error | undefined;
     validate(data?: Partial<IScoreData>): Error | undefined;
@@ -50,11 +56,6 @@ export declare class Score extends EventEmitter implements IScore {
     randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     play(): void;
     stop(): void;
-    /**
-     * 再生位置を任意のフレームに移動する。
-     * 単位はフレーム（小節境界をまたぐ通し番号）で、有効範囲は 0〜measures.length*16-1。
-     * 再生中に呼ばれた場合もタイマーは継続し、次の process tick で chord 等が追従する。
-     */
     seek(frame: number): Error | undefined;
     process(): void;
 }

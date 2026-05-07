@@ -12,7 +12,8 @@
       "!**/dist",
       "!**/.parcel-dist",
       "!**/coverage",
-      "!**/.claude"
+      "!**/.claude",
+      "!**/.vscode"
     ]
   },
   "formatter": {
