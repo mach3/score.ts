@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaDiceTwo, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa";
+import {
+  FaDiceTwo,
+  FaPause,
+  FaPlay,
+  FaPlus,
+  FaStepBackward,
+  FaTrash,
+} from "react-icons/fa";
 import styled from "styled-components";
 import {
   CHORD_NAMES,
@@ -26,6 +33,25 @@ const MeasureBase = styled.div({
 
 const MeasureInner = styled.div({
   display: "flex",
+});
+
+const MeasureHeader = styled.div({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  cursor: "pointer",
+  fontSize: 14,
+  padding: "4px 8px",
+  borderRadius: 4,
+  backgroundColor: "#eee",
+  userSelect: "none",
+  "&:hover": {
+    backgroundColor: "#ddd",
+  },
+  "&.-current": {
+    backgroundColor: "#c96",
+    color: "#fff",
+  },
 });
 
 const MeasureControlBase = styled.div({
@@ -95,7 +121,7 @@ interface NoteProps {
   onChange: () => void;
 }
 
-function Note({ value, onChange }: NoteProps): JSX.Element {
+function Note({ value, onChange }: NoteProps) {
   return (
     <NoteBase>
       <input
@@ -112,7 +138,7 @@ interface ChordSelectProps {
   onChange: (value: ChordName) => void;
 }
 
-function ChordSelect({ value, onChange }: ChordSelectProps): JSX.Element {
+function ChordSelect({ value, onChange }: ChordSelectProps) {
   const list = CHORD_NAMES;
   return (
     <SelectBox
@@ -131,7 +157,7 @@ interface PresetSelectProps {
   onChange: (value: PresetName) => void;
 }
 
-function PresetSelect({ value, onChange }: PresetSelectProps): JSX.Element {
+function PresetSelect({ value, onChange }: PresetSelectProps) {
   return (
     <SelectBox
       value={value}
@@ -170,6 +196,21 @@ export function Page() {
         {data?.measures.map((measure, m) => {
           return (
             <MeasureBase key={`measure-${m.toString()}`}>
+              <MeasureHeader
+                className={
+                  Math.floor(currentFrame / 16) === m ? "-current" : undefined
+                }
+                onClick={() => {
+                  const e = score?.seek(m * 16);
+                  if (e instanceof Error) {
+                    alert(e.message);
+                  } else {
+                    setCurrentFrame(m * 16);
+                  }
+                }}
+              >
+                {m + 1}
+              </MeasureHeader>
               <MeasureInner>
                 {measure.frames.map((frame, f) => {
                   const frameIndex = m * 16 + f;
@@ -246,6 +287,19 @@ export function Page() {
         </AddMeasureButtonBase>
       </ScoreBase>
       <ControlBase>
+        <ControlButton
+          type="button"
+          onClick={() => {
+            const e = score?.seek(0);
+            if (e instanceof Error) {
+              alert(e.message);
+            } else {
+              setCurrentFrame(0);
+            }
+          }}
+        >
+          <FaStepBackward />
+        </ControlButton>
         <ControlButton
           type="button"
           onClick={() => {
