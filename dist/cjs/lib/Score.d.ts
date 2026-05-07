@@ -25,6 +25,7 @@ interface IScore {
     randomize: (measureIndex: number, callback?: () => boolean) => Error | undefined;
     play: () => void;
     stop: () => void;
+    seek: (frame: number) => Error | undefined;
 }
 export declare class Score extends EventEmitter implements IScore {
     context?: AudioContext;
@@ -49,6 +50,12 @@ export declare class Score extends EventEmitter implements IScore {
     randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     play(): void;
     stop(): void;
+    /**
+     * 再生位置を任意のフレームに移動する。
+     * 単位はフレーム（小節境界をまたぐ通し番号）で、有効範囲は 0〜measures.length*16-1。
+     * 再生中に呼ばれた場合もタイマーは継続し、次の process tick で chord 等が追従する。
+     */
+    seek(frame: number): Error | undefined;
     process(): void;
 }
 export {};
