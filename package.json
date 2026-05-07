@@ -35,6 +35,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "unrs-resolver"
+    ],
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "lmdb",
+      "msgpackr-extract"
     ]
   }
 }
