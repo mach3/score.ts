@@ -179,14 +179,27 @@ export function Page() {
     const s = new Score();
     setScore(s);
     setData(s.data);
-    s.addListener("change", (e) => {
-      setData((pre) => {
-        return { ...pre, ...e.target.data };
-      });
-    });
-    s.addListener("process", (e) => {
-      setCurrentFrame(e.target.currentFrame);
-    });
+    const controller = new AbortController();
+    s.on(
+      "change",
+      (e) => {
+        setData((pre) => {
+          return { ...pre, ...e.target.data };
+        });
+      },
+      { signal: controller.signal },
+    );
+    s.on(
+      "process",
+      (e) => {
+        setCurrentFrame(e.target.currentFrame);
+      },
+      { signal: controller.signal },
+    );
+    return () => {
+      controller.abort();
+      s.stop();
+    };
   }, []);
 
   return (
@@ -332,7 +345,7 @@ export function Page() {
           type="range"
           min="4"
           max="12"
-          value={score?.data.speed}
+          value={score?.data.speed ?? 8}
           onChange={(e) => {
             score?.setSpeed(Number(e.target.value));
           }}

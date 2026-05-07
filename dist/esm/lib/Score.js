@@ -1,4 +1,3 @@
-import { EventEmitter } from "node:events";
 import { CHORD_NAMES, getChordNotes, } from "../const/chords_notes";
 import { getPreset, PRESET_NAMES } from "../const/presets";
 import { Tone } from "./Tone";
@@ -30,13 +29,19 @@ const DEFAULT_SCORE_DATA = {
     speed: 8,
     preset: "Piano",
 };
-export class Score extends EventEmitter {
+export class Score extends EventTarget {
     constructor() {
         super();
         this.playing = false;
         this.currentFrame = 0;
         this.data = u.deepClone(DEFAULT_SCORE_DATA);
         this.currentChord = this.data.measures[0].chord;
+    }
+    on(type, listener, options) {
+        this.addEventListener(type, listener, options);
+    }
+    emit(type) {
+        this.dispatchEvent(new Event(type));
     }
     connect(context) {
         this.context = context || new AudioContext();
@@ -52,7 +57,7 @@ export class Score extends EventEmitter {
         }
         Object.assign(this.data, u.deepClone(data));
         if (data) {
-            this.emit("change", { target: this });
+            this.emit("change");
         }
     }
     validate(data) {
@@ -114,7 +119,7 @@ export class Score extends EventEmitter {
             chord: chord || (lastMeasure === null || lastMeasure === void 0 ? void 0 : lastMeasure.chord),
             frames: createEmptyFrames(),
         });
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     removeMeasure(index) {
         if (this.data.measures.length === 1) {
@@ -124,7 +129,7 @@ export class Score extends EventEmitter {
             return new Error("measure index out of range");
         }
         this.data.measures.splice(index, 1);
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     toggleNote(measureIndex, frameIndex, noteIndex, value) {
         const measure = this.data.measures.at(measureIndex);
@@ -140,7 +145,7 @@ export class Score extends EventEmitter {
         const v = measure.frames[frameIndex][noteIndex];
         measure.frames[frameIndex][noteIndex] =
             value !== undefined ? value : v === 1 ? 0 : 1;
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     setChord(measureIndex, chord) {
         const measure = this.data.measures.at(measureIndex);
@@ -148,7 +153,7 @@ export class Score extends EventEmitter {
             return new Error("measure index out of range");
         }
         measure.chord = chord;
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     setPreset(preset) {
         const error = this.validate({ preset });
@@ -165,14 +170,14 @@ export class Score extends EventEmitter {
                 this.process();
             }
         }
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     setSpeed(speed) {
         if (speed <= 0) {
             return new Error("speed must be greater than zero");
         }
         this.data.speed = speed;
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     randomize(measureIndex, callback = u.random) {
         const measure = this.data.measures.at(measureIndex);
@@ -183,7 +188,7 @@ export class Score extends EventEmitter {
             return frame.map(() => (callback() ? 1 : 0));
         });
         measure.frames = frames;
-        this.emit("change", { target: this });
+        this.emit("change");
     }
     play() {
         this.playing = true;
@@ -204,11 +209,6 @@ export class Score extends EventEmitter {
             }
         }
     }
-    /**
-     * 再生位置を任意のフレームに移動する。
-     * 単位はフレーム（小節境界をまたぐ通し番号）で、有効範囲は 0〜measures.length*16-1。
-     * 再生中に呼ばれた場合もタイマーは継続し、次の process tick で chord 等が追従する。
-     */
     seek(frame) {
         if (!Number.isInteger(frame)) {
             return new Error("frame must be an integer");
@@ -248,6 +248,6 @@ export class Score extends EventEmitter {
         this.currentFrame =
             (this.currentFrame + 1) % (this.data.measures.length * 16);
         this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);
-        this.emit("process", { target: this });
+        this.emit("process");
     }
 }
