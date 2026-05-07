@@ -345,7 +345,7 @@ export function Page() {
           type="range"
           min="4"
           max="12"
-          value={score?.data.speed}
+          value={score?.data.speed ?? 8}
           onChange={(e) => {
             score?.setSpeed(Number(e.target.value));
           }}
