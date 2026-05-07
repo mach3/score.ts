@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Score = void 0;
-const events_1 = require("events");
+const node_events_1 = require("node:events");
 const chords_notes_1 = require("../const/chords_notes");
 const presets_1 = require("../const/presets");
 const Tone_1 = require("./Tone");
@@ -33,7 +33,7 @@ const DEFAULT_SCORE_DATA = {
     speed: 8,
     preset: "Piano",
 };
-class Score extends events_1.EventEmitter {
+class Score extends node_events_1.EventEmitter {
     constructor() {
         super();
         this.playing = false;

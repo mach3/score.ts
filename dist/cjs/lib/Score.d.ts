@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 import { type ChordName } from "../const/chords_notes";
 import { type PresetName } from "../const/presets";
 import { Tone } from "./Tone";

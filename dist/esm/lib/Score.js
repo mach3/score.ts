@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 import { CHORD_NAMES, getChordNotes, } from "../const/chords_notes";
 import { getPreset, PRESET_NAMES } from "../const/presets";
 import { Tone } from "./Tone";
