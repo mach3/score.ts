@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Score = void 0;
-const events_1 = require("events");
+const node_events_1 = require("node:events");
 const chords_notes_1 = require("../const/chords_notes");
 const presets_1 = require("../const/presets");
 const Tone_1 = require("./Tone");
@@ -33,7 +33,7 @@ const DEFAULT_SCORE_DATA = {
     speed: 8,
     preset: "Piano",
 };
-class Score extends events_1.EventEmitter {
+class Score extends node_events_1.EventEmitter {
     constructor() {
         super();
         this.playing = false;
@@ -206,6 +206,20 @@ class Score extends events_1.EventEmitter {
                 tone.stop();
             }
         }
+    }
+    /**
+     * 再生位置を任意のフレームに移動する。
+     * 単位はフレーム（小節境界をまたぐ通し番号）で、有効範囲は 0〜measures.length*16-1。
+     * 再生中に呼ばれた場合もタイマーは継続し、次の process tick で chord 等が追従する。
+     */
+    seek(frame) {
+        if (!Number.isInteger(frame)) {
+            return new Error("frame must be an integer");
+        }
+        if (frame < 0 || frame >= this.data.measures.length * 16) {
+            return new Error("frame index out of range");
+        }
+        this.currentFrame = frame;
     }
     process() {
         if (this.tones === undefined)

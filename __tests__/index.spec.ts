@@ -328,6 +328,59 @@ describe("Score Class", () => {
     score.stop();
   });
 
+  test("seek updates currentFrame within range", () => {
+    const score = new Score();
+    score.init(dummyData);
+
+    expect(score.seek(0)).toBeUndefined();
+    expect(score.currentFrame).toBe(0);
+
+    const lastFrame = score.data.measures.length * 16 - 1;
+    expect(score.seek(lastFrame)).toBeUndefined();
+    expect(score.currentFrame).toBe(lastFrame);
+  });
+
+  test("seek returns Error for out-of-range frame", () => {
+    const score = new Score();
+    score.init(dummyData);
+    const upperBound = score.data.measures.length * 16;
+
+    expect(score.seek(-1)).toBeInstanceOf(Error);
+    expect(score.seek(upperBound)).toBeInstanceOf(Error);
+    // 失敗時は currentFrame が変わらない
+    expect(score.currentFrame).toBe(0);
+  });
+
+  test("seek returns Error for non-integer frame", () => {
+    const score = new Score();
+    score.init(dummyData);
+
+    expect(score.seek(1.5)).toBeInstanceOf(Error);
+    expect(score.seek(Number.NaN)).toBeInstanceOf(Error);
+    expect(score.seek(Number.POSITIVE_INFINITY)).toBeInstanceOf(Error);
+    expect(score.currentFrame).toBe(0);
+  });
+
+  test("seek during playback keeps timer running and advances from new position", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.init(dummyData);
+    score.initTones();
+    score.play();
+
+    const target = 2 * 16; // 3小節目の先頭
+    expect(score.seek(target)).toBeUndefined();
+    expect(score.currentFrame).toBe(target);
+    expect(score.playing).toBe(true);
+
+    const frameTime = 1000 / score.data.speed;
+    jest.advanceTimersByTime(frameTime);
+    expect(score.currentFrame).toBe(target + 1);
+
+    score.stop();
+  });
+
   test("process rewinds when measure is removed during playback", () => {
     jest.useFakeTimers();
     const score = new Score();

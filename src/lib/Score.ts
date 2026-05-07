@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 
 import {
   CHORD_NAMES,
@@ -74,6 +74,7 @@ interface IScore {
   ) => Error | undefined;
   play: () => void;
   stop: () => void;
+  seek: (frame: number) => Error | undefined;
 }
 
 export class Score extends EventEmitter implements IScore {
@@ -281,6 +282,21 @@ export class Score extends EventEmitter implements IScore {
         tone.stop();
       }
     }
+  }
+
+  /**
+   * 再生位置を任意のフレームに移動する。
+   * 単位はフレーム（小節境界をまたぐ通し番号）で、有効範囲は 0〜measures.length*16-1。
+   * 再生中に呼ばれた場合もタイマーは継続し、次の process tick で chord 等が追従する。
+   */
+  seek(frame: number): Error | undefined {
+    if (!Number.isInteger(frame)) {
+      return new Error("frame must be an integer");
+    }
+    if (frame < 0 || frame >= this.data.measures.length * 16) {
+      return new Error("frame index out of range");
+    }
+    this.currentFrame = frame;
   }
 
   process() {
