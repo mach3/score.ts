@@ -48,6 +48,7 @@ describe("Score Class", () => {
       disconnect: jest.fn(),
     })),
     createPeriodicWave: jest.fn(() => ({})),
+    close: jest.fn(),
     destination: {},
   };
 
@@ -298,6 +299,82 @@ describe("Score Class", () => {
     score.stop();
     expect(score.playing).toBe(false);
     expect(score.tones?.every((tone) => !tone.playing)).toBe(true);
+  });
+
+  test("replay after stop reuses tones without recreating oscillators", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    const tonesBeforePlay = score.tones;
+    score.play();
+    score.stop();
+    expect(score.tones?.every((tone) => !tone.playing)).toBe(true);
+
+    // 再 play で OscillatorNode を作り直さず（同一参照のまま）、
+    // playing フラグが再有効化されること（これが無いと ping が鳴らない）。
+    score.play();
+    expect(score.tones).toBe(tonesBeforePlay);
+    expect(score.tones?.every((tone) => tone.oscillator !== undefined)).toBe(
+      true,
+    );
+    expect(score.tones?.every((tone) => tone.playing)).toBe(true);
+    score.stop();
+  });
+
+  test("destroy releases all audio resources", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    const tones = score.tones;
+    const oscillators = tones?.map((tone) => tone.oscillator);
+    const masterGain = score.masterGain;
+    score.play();
+
+    score.destroy();
+
+    // 各 OscillatorNode を stop + disconnect
+    oscillators?.forEach((osc) => {
+      expect(osc?.stop).toHaveBeenCalled();
+      expect(osc?.disconnect).toHaveBeenCalled();
+    });
+    // マスターゲインを disconnect
+    expect(masterGain?.disconnect).toHaveBeenCalled();
+    // 各 Tone・Score の参照がクリアされる
+    for (const tone of tones ?? []) {
+      expect(tone.oscillator).toBeUndefined();
+    }
+    expect(score.tones).toBeUndefined();
+    expect(score.masterGain).toBeUndefined();
+    expect(score.context).toBeUndefined();
+  });
+
+  test("destroy does not close an externally provided context", () => {
+    const score = new Score();
+    const externalContext = { ...mockAudioContext, close: jest.fn() };
+    score.connect(externalContext as unknown as AudioContext);
+
+    score.destroy();
+
+    expect(externalContext.close).not.toHaveBeenCalled();
+  });
+
+  test("destroy closes a context it created internally", () => {
+    const OriginalAudioContext = (
+      global as unknown as { AudioContext?: unknown }
+    ).AudioContext;
+    const internalContext = { ...mockAudioContext, close: jest.fn() };
+    (global as unknown as { AudioContext: unknown }).AudioContext = jest.fn(
+      () => internalContext,
+    );
+    try {
+      const score = new Score();
+      score.connect(); // 引数なし = 自前生成
+      score.destroy();
+      expect(internalContext.close).toHaveBeenCalled();
+    } finally {
+      (global as unknown as { AudioContext?: unknown }).AudioContext =
+        OriginalAudioContext;
+    }
   });
 
   test("initTones reinitializes existing tones", () => {

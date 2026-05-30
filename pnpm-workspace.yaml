@@ -1,3 +1,9 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': false
+  lmdb: false
+  msgpackr-extract: false
+  unrs-resolver: true
 overrides:
   picomatch@<2.3.2: '>=2.3.2'
   picomatch@>=4.0.0 <4.0.4: '>=4.0.4'
