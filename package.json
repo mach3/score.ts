@@ -31,16 +31,5 @@
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "unrs-resolver"
-    ],
-    "ignoredBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "lmdb",
-      "msgpackr-extract"
-    ]
   }
 }
