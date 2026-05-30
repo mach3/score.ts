@@ -37,6 +37,7 @@ class Score extends EventTarget {
         super();
         this.playing = false;
         this.currentFrame = 0;
+        this.ownsContext = false;
         this.data = u.deepClone(DEFAULT_SCORE_DATA);
         this.currentChord = this.data.measures[0].chord;
     }
@@ -47,6 +48,8 @@ class Score extends EventTarget {
         this.dispatchEvent(new Event(type));
     }
     connect(context) {
+        // 引数なしで自前生成した context のみ destroy() で close する（外部渡しは呼び出し側の所有物）。
+        this.ownsContext = !context;
         this.context = context || new AudioContext();
         this.masterGain = this.context.createGain();
         this.masterGain.gain.value = 1 / 16;
@@ -195,12 +198,14 @@ class Score extends EventTarget {
     }
     play() {
         this.playing = true;
-        this.process();
-        if (this.context && this.tones) {
+        // 各 Tone の playing フラグを再有効化する（stop() で false になっている）。
+        // OscillatorNode は stop() 後も破棄せず生かしているため、再生成は不要。
+        if (this.tones) {
             for (const tone of this.tones) {
                 tone.start();
             }
         }
+        this.process();
     }
     stop() {
         clearTimeout(this.timer);
@@ -220,6 +225,27 @@ class Score extends EventTarget {
             return new Error("frame index out of range");
         }
         this.currentFrame = frame;
+    }
+    // リソースを完全解放する（使い捨て。destroy 後の再利用は想定しない）。
+    destroy() {
+        clearTimeout(this.timer);
+        this.timer = undefined;
+        this.playing = false;
+        if (this.tones) {
+            for (const tone of this.tones) {
+                tone.destroy();
+            }
+            this.tones = undefined;
+        }
+        if (this.masterGain) {
+            this.masterGain.disconnect();
+            this.masterGain = undefined;
+        }
+        // 自前生成した context のみ close（外部渡しは呼び出し側の所有物のため触らない）。
+        if (this.context && this.ownsContext) {
+            this.context.close();
+        }
+        this.context = undefined;
     }
     process() {
         if (this.tones === undefined)
