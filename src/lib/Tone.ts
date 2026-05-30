@@ -11,6 +11,7 @@ interface ITone {
   start: () => void;
   ping: (noteDuration: number) => void;
   stop: () => void;
+  destroy: () => void;
 }
 
 export class Tone implements ITone {
@@ -76,6 +77,12 @@ export class Tone implements ITone {
       this.gain.gain.cancelScheduledValues(now);
       this.gain.gain.setValueAtTime(0, now);
     }
+  }
+
+  // OscillatorNode は仕様上 stop() 後に再利用不可。
+  // stop() は再生停止のみを担い、リソースの完全解放はこちらで行う（使い捨て）。
+  destroy() {
+    this.playing = false;
     if (this.oscillator) {
       this.oscillator.stop();
       this.oscillator.disconnect();
