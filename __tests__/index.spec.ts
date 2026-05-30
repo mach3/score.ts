@@ -340,7 +340,9 @@ describe("Score Class", () => {
     // マスターゲインを disconnect
     expect(masterGain?.disconnect).toHaveBeenCalled();
     // 各 Tone・Score の参照がクリアされる
-    tones?.forEach((tone) => expect(tone.oscillator).toBeUndefined());
+    for (const tone of tones ?? []) {
+      expect(tone.oscillator).toBeUndefined();
+    }
     expect(score.tones).toBeUndefined();
     expect(score.masterGain).toBeUndefined();
     expect(score.context).toBeUndefined();
