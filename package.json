@@ -6,7 +6,8 @@
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
-    "example": "npx parcel example/index.html --dist-dir .parcel-dist",
+    "example": "parcel example/index.html --dist-dir .parcel-dist",
+    "build:example": "parcel build example/index.html --dist-dir .pages-dist --public-url /score.ts/",
     "build": "rimraf ./dist/* && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
@@ -14,6 +15,11 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
+  },
+  "targets": {
+    "main": false,
+    "module": false,
+    "types": false
   },
   "author": "mach3",
   "license": "MIT",
@@ -25,6 +31,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "jest": "^30.3.0",
+    "parcel": "^2.16.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
