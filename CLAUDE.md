@@ -27,12 +27,15 @@ npx jest __tests__/index.spec.ts
 # Run tests matching a pattern
 npx jest -t "initialize"
 
-# Lint and format (Biome)
-npx biome check .
-npx biome check --write .
+# Lint (Biome)
+pnpm run lint
+pnpm run lint:fix
 
 # Run example app (Parcel dev server)
 pnpm run example
+
+# Build example app for GitHub Pages
+pnpm run build:example
 ```
 
 ## Architecture
@@ -50,11 +53,13 @@ pnpm run example
   - 再生ループは `setTimeout` ベース。`process()` が再帰的にフレームを進行
   - マスターゲインノード（`1/16`）で16音の同時発音時のクリッピングを防止
   - 操作メソッド（`toggleNote`, `addMeasure`, `setChord`, `setPreset`, `seek` 等）は失敗時に `Error` を返し、成功時は `undefined` を返すパターン（throw しない）
+  - `destroy()` で AudioContext（自前生成時のみ）・masterGain・Tone 全インスタンスを完全解放（使い捨て。以降の再利用不可）
 
 - **Tone** (`src/lib/Tone.ts`): Web Audio の OscillatorNode + GainNode のラッパー
   - プリセットに応じた波形タイプ（sine, square, sawtooth, triangle, custom PeriodicWave）を設定
   - ADSRエンベロープによるゲイン制御。`ping()` で Web Audio のスケジューリング API を使用
-  - `stop()` でオシレーター・ゲインノードを適切に `stop()` / `disconnect()` してリソース解放
+  - `stop()` はゲインを 0 にして再生停止するのみ（OscillatorNode は維持するため `play()` で再開可能）
+  - `destroy()` でオシレーター・ゲインノードを `stop()` / `disconnect()` してリソース完全解放（使い捨て）
 
 ### Data Structure
 

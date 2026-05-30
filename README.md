@@ -75,9 +75,10 @@ score.stop();
 | `setPreset(preset: PresetName)` | 音色プリセットを変更 |
 | `setSpeed(speed: number)` | 再生速度を設定（フレーム/秒） |
 | `randomize(measureIndex, callback?)` | 指定小節をランダム化 |
-| `play()` | 再生開始 |
-| `stop()` | 再生停止 |
+| `play()` | 再生開始（stop() 後の再開も可） |
+| `stop()` | 再生停止（OscillatorNode は維持されるため、play() で再開できる） |
 | `seek(frame: number)` | 再生位置を任意のフレームに移動（0〜小節数×16-1） |
+| `destroy()` | AudioContext・OscillatorNode 等のリソースを完全解放（使い捨て。以降の再利用不可） |
 | `on(type, listener, options?)` | 型強化されたイベント登録ヘルパー（`change` / `process`） |
 
 #### イベント
@@ -158,6 +159,10 @@ pnpm run typecheck
 
 # テスト
 pnpm test
+
+# Lint
+pnpm run lint
+pnpm run lint:fix
 
 # サンプルアプリの起動
 pnpm run example
