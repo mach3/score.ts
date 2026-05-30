@@ -30,6 +30,7 @@ interface IScore {
     play: () => void;
     stop: () => void;
     seek: (frame: number) => Error | undefined;
+    destroy: () => void;
 }
 export declare class Score extends EventTarget implements IScore {
     context?: AudioContext;
@@ -40,6 +41,7 @@ export declare class Score extends EventTarget implements IScore {
     playing: boolean;
     currentChord: ChordName;
     currentFrame: number;
+    private ownsContext;
     constructor();
     on<K extends ScoreEventName>(type: K, listener: (event: ScoreEvent<K>) => void, options?: AddEventListenerOptions | boolean): void;
     private emit;
@@ -57,6 +59,7 @@ export declare class Score extends EventTarget implements IScore {
     play(): void;
     stop(): void;
     seek(frame: number): Error | undefined;
+    destroy(): void;
     process(): void;
 }
 export {};

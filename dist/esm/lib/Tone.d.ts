@@ -5,6 +5,7 @@ interface ITone {
     start: () => void;
     ping: (noteDuration: number) => void;
     stop: () => void;
+    destroy: () => void;
 }
 export declare class Tone implements ITone {
     context?: AudioContext;
@@ -17,6 +18,7 @@ export declare class Tone implements ITone {
     set frequency(value: number);
     start(): void;
     stop(): void;
+    destroy(): void;
     ping(noteDuration: number): void;
 }
 export {};
