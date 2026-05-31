@@ -39,6 +39,11 @@ score.on("process", (e) => {
   console.log("現在のフレーム:", e.target.currentFrame);
 });
 
+// 再生状態が変わったときのイベントリスナー
+score.on("playingchange", (e) => {
+  console.log("再生状態:", e.target.playing); // true or false
+});
+
 // ノートをトグル（小節インデックス, フレームインデックス, ノートインデックス）
 score.toggleNote(0, 0, 0);
 
@@ -79,7 +84,7 @@ score.stop();
 | `stop()` | 再生停止（OscillatorNode は維持されるため、play() で再開できる） |
 | `seek(frame: number)` | 再生位置を任意のフレームに移動（0〜小節数×16-1） |
 | `destroy()` | AudioContext・OscillatorNode 等のリソースを完全解放（使い捨て。以降の再利用不可） |
-| `on(type, listener, options?)` | 型強化されたイベント登録ヘルパー（`change` / `process`） |
+| `on(type, listener, options?)` | 型強化されたイベント登録ヘルパー（`change` / `process` / `playingchange`） |
 
 #### イベント
 
@@ -89,6 +94,7 @@ score.stop();
 |---------|------|
 | `change` | データが変更されたとき |
 | `process` | フレームが進んだとき |
+| `playingchange` | `play()` / `stop()` で再生状態が変わったとき（`e.target.playing` で現在値を参照） |
 
 ### IScoreData インターフェース
 

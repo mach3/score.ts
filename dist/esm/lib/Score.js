@@ -203,6 +203,7 @@ export class Score extends EventTarget {
             }
         }
         this.process();
+        this.emit("playingchange");
     }
     stop() {
         clearTimeout(this.timer);
@@ -213,6 +214,7 @@ export class Score extends EventTarget {
                 tone.stop();
             }
         }
+        this.emit("playingchange");
     }
     seek(frame) {
         if (!Number.isInteger(frame)) {

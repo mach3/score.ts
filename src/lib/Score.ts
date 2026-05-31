@@ -6,7 +6,7 @@ import {
 import { getPreset, PRESET_NAMES, type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
 
-type ScoreEventName = "change" | "process";
+type ScoreEventName = "change" | "process" | "playingchange";
 type ScoreEvent<K extends ScoreEventName> = Event & { type: K; target: Score };
 
 type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
@@ -290,6 +290,7 @@ export class Score extends EventTarget implements IScore {
       }
     }
     this.process();
+    this.emit("playingchange");
   }
 
   stop() {
@@ -301,6 +302,7 @@ export class Score extends EventTarget implements IScore {
         tone.stop();
       }
     }
+    this.emit("playingchange");
   }
 
   seek(frame: number): Error | undefined {
