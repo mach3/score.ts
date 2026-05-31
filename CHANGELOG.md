@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.6.0] - 2026-05-31
+
+### Features
+
+- `Score` クラスに `playingchange` イベントを追加: `play()` / `stop()` で再生状態が変わったときに発火。リスナーは `e.target.playing` で現在値（`true` / `false`）を参照できる。`destroy()` 時は発火しない
+
+---
+
 ## [v0.5.0] - 2026-05-30
 
 ### Bug Fixes
