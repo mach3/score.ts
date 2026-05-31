@@ -47,7 +47,7 @@ pnpm run build:example
 ### Core Classes
 
 - **Score** (`src/lib/Score.ts`): スコアデータの管理と再生を担うメインクラス
-  - `EventTarget` を継承。`change`（データ変更時）と `process`（フレーム進行時）イベントを発火。リスナーは `e.target` から Score インスタンスを参照可能
+  - `EventTarget` を継承。`change`（データ変更時）・`process`（フレーム進行時）・`playingchange`（`play()` / `stop()` による再生状態変化時）イベントを発火。リスナーは `e.target` から Score インスタンスを参照可能
   - 型強化された `on(type, listener, options?)` ヘルパーを提供（標準の `addEventListener` も利用可能）
   - 最大16小節、各小節は16フレーム × 16ノートのグリッド構造
   - 再生ループは `setTimeout` ベース。`process()` が再帰的にフレームを進行
