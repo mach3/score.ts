@@ -1,7 +1,7 @@
 import { type ChordName } from "../const/chords_notes";
 import { type PresetName } from "../const/presets";
 import { Tone } from "./Tone";
-type ScoreEventName = "change" | "process";
+type ScoreEventName = "change" | "process" | "playingchange";
 type ScoreEvent<K extends ScoreEventName> = Event & {
     type: K;
     target: Score;
