@@ -301,6 +301,45 @@ describe("Score Class", () => {
     expect(score.tones?.every((tone) => !tone.playing)).toBe(true);
   });
 
+  test("play emits playingchange with playing = true", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    const handler = jest.fn();
+    score.on("playingchange", handler);
+
+    score.play();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect((handler.mock.calls[0][0] as Event).target).toBe(score);
+    expect(score.playing).toBe(true);
+    score.stop();
+  });
+
+  test("stop emits playingchange with playing = false", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.play();
+    const handler = jest.fn();
+    score.on("playingchange", handler);
+
+    score.stop();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(score.playing).toBe(false);
+  });
+
+  test("destroy does not emit playingchange", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.play();
+    const handler = jest.fn();
+    score.on("playingchange", handler);
+
+    score.destroy();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   test("replay after stop reuses tones without recreating oscillators", () => {
     jest.useFakeTimers();
     const score = new Score();
