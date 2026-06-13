@@ -213,7 +213,7 @@ class Score extends EventTarget {
             const emptyIndices = frame.flatMap((note, i) => (note === 0 ? [i] : []));
             if (emptyIndices.length === 0)
                 return frame;
-            const count = Math.min(Math.random() < 2 / 3 ? 1 : 2, emptyIndices.length);
+            const count = Math.min(Math.random() < 0.8 ? 1 : 2, emptyIndices.length);
             const picked = new Set(u.shuffle(emptyIndices).slice(0, count));
             return frame.map((note, i) => picked.has(i) ? 1 : note);
         });
