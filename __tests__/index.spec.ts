@@ -288,6 +288,45 @@ describe("Score Class", () => {
     expect(score.randomize(5)).toBeInstanceOf(Error);
   });
 
+  test("sprinkle adds notes without removing existing ones", () => {
+    const score = new Score();
+    score.addMeasure();
+    score.toggleNote(1, 0, 0);
+    score.toggleNote(1, 0, 1);
+    score.sprinkle(1);
+    const after = score.data.measures[1].frames[0];
+    expect(after[0]).toBe(1);
+    expect(after[1]).toBe(1);
+  });
+
+  test("sprinkle on full frame does not change it", () => {
+    const score = new Score();
+    score.addMeasure();
+    // フレーム 0 を全て 1 にする
+    for (let i = 0; i < 16; i++) {
+      score.toggleNote(1, 0, i, 1);
+    }
+    const before = score.data.measures[1].frames[0].slice();
+    score.sprinkle(1);
+    expect(score.data.measures[1].frames[0]).toEqual(before);
+  });
+
+  test("sprinkle on empty measure adds 1 or 2 notes per frame", () => {
+    const score = new Score();
+    score.addMeasure();
+    score.sprinkle(1);
+    for (const frame of score.data.measures[1].frames) {
+      const count = frame.filter((n) => n === 1).length;
+      expect(count).toBeGreaterThanOrEqual(1);
+      expect(count).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test("sprinkle out of range", () => {
+    const score = new Score();
+    expect(score.sprinkle(5)).toBeInstanceOf(Error);
+  });
+
   test("play", () => {
     jest.useFakeTimers();
     const score = new Score();

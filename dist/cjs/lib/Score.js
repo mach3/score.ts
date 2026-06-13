@@ -16,6 +16,14 @@ const u = {
     random: () => {
         return Math.random() > 0.75;
     },
+    shuffle: (arr) => {
+        const result = [...arr];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+    },
 };
 const createEmptyFrames = () => {
     return Array.from({ length: 16 }).map(() => {
@@ -192,6 +200,22 @@ class Score extends EventTarget {
         }
         const frames = measure.frames.map((frame) => {
             return frame.map(() => (callback() ? 1 : 0));
+        });
+        measure.frames = frames;
+        this.emit("change");
+    }
+    sprinkle(measureIndex) {
+        const measure = this.data.measures.at(measureIndex);
+        if (!measure) {
+            return new Error("measure index out of range");
+        }
+        const frames = measure.frames.map((frame) => {
+            const emptyIndices = frame.flatMap((note, i) => (note === 0 ? [i] : []));
+            if (emptyIndices.length === 0)
+                return frame;
+            const count = Math.min(Math.random() < 2 / 3 ? 1 : 2, emptyIndices.length);
+            const picked = new Set(u.shuffle(emptyIndices).slice(0, count));
+            return frame.map((note, i) => picked.has(i) ? 1 : note);
         });
         measure.frames = frames;
         this.emit("change");
