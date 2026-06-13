@@ -7,6 +7,7 @@ import {
   FaStepBackward,
   FaTrash,
 } from "react-icons/fa";
+import { IoSparkles } from "react-icons/io5";
 import styled from "styled-components";
 import {
   CHORD_NAMES,
@@ -250,6 +251,17 @@ export function Page() {
                 })}
               </MeasureInner>
               <MeasureControlBase>
+                <ControlButton
+                  type="button"
+                  onClick={() => {
+                    const e = score?.sprinkle(m);
+                    if (e instanceof Error) {
+                      alert(e.message);
+                    }
+                  }}
+                >
+                  <IoSparkles />
+                </ControlButton>
                 <ControlButton
                   type="button"
                   onClick={() => {
