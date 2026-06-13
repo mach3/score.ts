@@ -307,10 +307,7 @@ export class Score extends EventTarget implements IScore {
     const frames = measure.frames.map((frame) => {
       const emptyIndices = frame.flatMap((note, i) => (note === 0 ? [i] : []));
       if (emptyIndices.length === 0) return frame;
-      const count = Math.min(
-        Math.random() < 0.8 ? 1 : 2,
-        emptyIndices.length,
-      );
+      const count = Math.min(Math.random() < 0.8 ? 1 : 2, emptyIndices.length);
       const picked = new Set(u.shuffle(emptyIndices).slice(0, count));
       return frame.map((note, i) =>
         picked.has(i) ? 1 : note,
