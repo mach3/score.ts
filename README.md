@@ -79,7 +79,9 @@ score.stop();
 | `setChord(measureIndex, chord)` | 指定小節のコードを変更 |
 | `setPreset(preset: PresetName)` | 音色プリセットを変更 |
 | `setSpeed(speed: number)` | 再生速度を設定（フレーム/秒） |
-| `randomize(measureIndex, callback?)` | 指定小節をランダム化 |
+| `randomize(measureIndex, callback?)` | 指定小節をランダム化（全ノートを上書き） |
+| `sprinkle(measureIndex)` | 指定小節の各フレームに1〜2ノートをランダム追加（既存ノートを保持） |
+| `clear(measureIndex)` | 指定小節の全ノートを消去 |
 | `play()` | 再生開始（stop() 後の再開も可） |
 | `stop()` | 再生停止（OscillatorNode は維持されるため、play() で再開できる） |
 | `seek(frame: number)` | 再生位置を任意のフレームに移動（0〜小節数×16-1） |
