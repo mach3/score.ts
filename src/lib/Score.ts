@@ -25,6 +25,14 @@ const u = {
   random: (): boolean => {
     return Math.random() > 0.75;
   },
+  shuffle: <T>(arr: T[]): T[] => {
+    const result = [...arr];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  },
 };
 
 interface Measure {
@@ -73,6 +81,8 @@ interface IScore {
     measureIndex: number,
     callback?: () => boolean,
   ) => Error | undefined;
+  sprinkle: (measureIndex: number) => Error | undefined;
+  clear: (measureIndex: number) => Error | undefined;
   play: () => void;
   stop: () => void;
   seek: (frame: number) => Error | undefined;
@@ -275,6 +285,33 @@ export class Score extends EventTarget implements IScore {
     }
     const frames = measure.frames.map((frame) => {
       return frame.map(() => (callback() ? 1 : 0));
+    });
+    measure.frames = frames as Fixed16Array<Fixed16Array<NumBool>>;
+    this.emit("change");
+  }
+
+  clear(measureIndex: number): Error | undefined {
+    const measure = this.data.measures.at(measureIndex);
+    if (!measure) {
+      return new Error("measure index out of range");
+    }
+    measure.frames = createEmptyFrames();
+    this.emit("change");
+  }
+
+  sprinkle(measureIndex: number): Error | undefined {
+    const measure = this.data.measures.at(measureIndex);
+    if (!measure) {
+      return new Error("measure index out of range");
+    }
+    const frames = measure.frames.map((frame) => {
+      const emptyIndices = frame.flatMap((note, i) => (note === 0 ? [i] : []));
+      if (emptyIndices.length === 0) return frame;
+      const count = Math.min(Math.random() < 0.8 ? 1 : 2, emptyIndices.length);
+      const picked = new Set(u.shuffle(emptyIndices).slice(0, count));
+      return frame.map((note, i) =>
+        picked.has(i) ? 1 : note,
+      ) as Fixed16Array<NumBool>;
     });
     measure.frames = frames as Fixed16Array<Fixed16Array<NumBool>>;
     this.emit("change");
