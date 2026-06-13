@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.7.0] - 2026-06-13
+
+### Features
+
+- `Score` クラスに `sprinkle(measureIndex)` を追加: 指定小節の各フレームに空きノートをランダムに1〜2個有効化する
+- `Score` クラスに `clear(measureIndex)` を追加: 指定小節の全ノートをクリアする
+
+---
+
 ## [v0.6.0] - 2026-05-31
 
 ### Features
