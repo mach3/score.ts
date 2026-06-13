@@ -288,6 +288,18 @@ describe("Score Class", () => {
     expect(score.randomize(5)).toBeInstanceOf(Error);
   });
 
+  test("clear measure", () => {
+    const score = new Score();
+    score.init(dummyData);
+    score.clear(0);
+    expect(score.data.measures[0].frames).toEqual(emptyMeasure);
+  });
+
+  test("clear out of range", () => {
+    const score = new Score();
+    expect(score.clear(5)).toBeInstanceOf(Error);
+  });
+
   test("sprinkle adds notes without removing existing ones", () => {
     const score = new Score();
     score.addMeasure();

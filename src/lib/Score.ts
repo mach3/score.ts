@@ -82,6 +82,7 @@ interface IScore {
     callback?: () => boolean,
   ) => Error | undefined;
   sprinkle: (measureIndex: number) => Error | undefined;
+  clear: (measureIndex: number) => Error | undefined;
   play: () => void;
   stop: () => void;
   seek: (frame: number) => Error | undefined;
@@ -286,6 +287,15 @@ export class Score extends EventTarget implements IScore {
       return frame.map(() => (callback() ? 1 : 0));
     });
     measure.frames = frames as Fixed16Array<Fixed16Array<NumBool>>;
+    this.emit("change");
+  }
+
+  clear(measureIndex: number): Error | undefined {
+    const measure = this.data.measures.at(measureIndex);
+    if (!measure) {
+      return new Error("measure index out of range");
+    }
+    measure.frames = createEmptyFrames();
     this.emit("change");
   }
 

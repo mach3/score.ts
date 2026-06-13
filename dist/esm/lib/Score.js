@@ -201,6 +201,14 @@ export class Score extends EventTarget {
         measure.frames = frames;
         this.emit("change");
     }
+    clear(measureIndex) {
+        const measure = this.data.measures.at(measureIndex);
+        if (!measure) {
+            return new Error("measure index out of range");
+        }
+        measure.frames = createEmptyFrames();
+        this.emit("change");
+    }
     sprinkle(measureIndex) {
         const measure = this.data.measures.at(measureIndex);
         if (!measure) {

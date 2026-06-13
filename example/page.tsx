@@ -276,6 +276,10 @@ export function Page() {
                 <ControlButton
                   type="button"
                   onClick={() => {
+                    if (data && data.measures.length === 1) {
+                      score?.clear(m);
+                      return;
+                    }
                     const e = score?.removeMeasure(m);
                     if (e instanceof Error) {
                       alert(e.message);
