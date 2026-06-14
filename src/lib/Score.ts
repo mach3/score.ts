@@ -1,9 +1,11 @@
+import { BEAT_PATTERNS, type BeatPattern } from "../const/beats";
 import {
   CHORD_NAMES,
   type ChordName,
   getChordNotes,
 } from "../const/chords_notes";
 import { getPreset, PRESET_NAMES, type PresetName } from "../const/presets";
+import { Drum } from "./Drum";
 import { Tone } from "./Tone";
 
 type ScoreEventName = "change" | "process" | "playingchange";
@@ -44,6 +46,7 @@ export interface IScoreData {
   measures: Measure[];
   speed: number;
   preset?: PresetName;
+  beat?: BeatPattern;
 }
 
 const createEmptyFrames = (): Fixed16Array<Fixed16Array<NumBool>> => {
@@ -77,6 +80,7 @@ interface IScore {
   setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
   setPreset: (preset: PresetName) => Error | undefined;
   setSpeed: (speed: number) => Error | undefined;
+  setBeat: (beat: BeatPattern | undefined) => Error | undefined;
   randomize: (
     measureIndex: number,
     callback?: () => boolean,
@@ -92,6 +96,8 @@ interface IScore {
 export class Score extends EventTarget implements IScore {
   context?: AudioContext;
   masterGain?: GainNode;
+  drumGain?: GainNode;
+  drum?: Drum;
   data: IScoreData;
   tones?: Array<Tone>;
   timer?: number;
@@ -124,6 +130,11 @@ export class Score extends EventTarget implements IScore {
     this.masterGain = this.context.createGain();
     this.masterGain.gain.value = 1 / 16;
     this.masterGain.connect(this.context.destination);
+    this.drumGain = this.context.createGain();
+    this.drumGain.gain.value = 0.5;
+    this.drumGain.connect(this.context.destination);
+    this.drum = new Drum();
+    this.drum.connect(this.context, this.drumGain);
     this.initTones();
   }
 
@@ -170,6 +181,11 @@ export class Score extends EventTarget implements IScore {
     if (data.preset !== undefined) {
       if (!PRESET_NAMES.includes(data.preset)) {
         return new Error("invalid preset value");
+      }
+    }
+    if (data.beat !== undefined) {
+      if (!BEAT_PATTERNS.includes(data.beat)) {
+        return new Error("invalid beat value");
       }
     }
   }
@@ -275,6 +291,13 @@ export class Score extends EventTarget implements IScore {
     this.emit("change");
   }
 
+  setBeat(beat: BeatPattern | undefined): Error | undefined {
+    const error = this.validate({ beat });
+    if (error instanceof Error) return error;
+    this.data.beat = beat;
+    this.emit("change");
+  }
+
   randomize(
     measureIndex: number,
     callback: () => boolean = u.random,
@@ -363,6 +386,12 @@ export class Score extends EventTarget implements IScore {
       }
       this.tones = undefined;
     }
+    this.drum?.disconnect();
+    this.drum = undefined;
+    if (this.drumGain) {
+      this.drumGain.disconnect();
+      this.drumGain = undefined;
+    }
     if (this.masterGain) {
       this.masterGain.disconnect();
       this.masterGain = undefined;
@@ -386,7 +415,8 @@ export class Score extends EventTarget implements IScore {
       this.process();
       return;
     }
-    const frame = measure.frames[this.currentFrame % 16];
+    const frameInMeasure = this.currentFrame % 16;
+    const frame = measure.frames[frameInMeasure];
     if (measure.chord !== this.currentChord) {
       this.currentChord = measure.chord;
       const notes = getChordNotes(this.currentChord);
@@ -399,6 +429,9 @@ export class Score extends EventTarget implements IScore {
         this.tones[index].ping(1 / this.data.speed);
       }
     });
+    if (this.data.beat && this.drum) {
+      this.drum.ping(this.data.beat, frameInMeasure, 1 / this.data.speed);
+    }
     this.currentFrame =
       (this.currentFrame + 1) % (this.data.measures.length * 16);
     this.timer = setTimeout(
