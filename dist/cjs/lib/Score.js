@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Score = void 0;
+const beats_1 = require("../const/beats");
 const chords_notes_1 = require("../const/chords_notes");
 const presets_1 = require("../const/presets");
+const Drum_1 = require("./Drum");
 const Tone_1 = require("./Tone");
 const u = {
     // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
@@ -62,6 +64,11 @@ class Score extends EventTarget {
         this.masterGain = this.context.createGain();
         this.masterGain.gain.value = 1 / 16;
         this.masterGain.connect(this.context.destination);
+        this.drumGain = this.context.createGain();
+        this.drumGain.gain.value = 0.5;
+        this.drumGain.connect(this.context.destination);
+        this.drum = new Drum_1.Drum();
+        this.drum.connect(this.context, this.drumGain);
         this.initTones();
     }
     init(data) {
@@ -103,6 +110,11 @@ class Score extends EventTarget {
         if (data.preset !== undefined) {
             if (!presets_1.PRESET_NAMES.includes(data.preset)) {
                 return new Error("invalid preset value");
+            }
+        }
+        if (data.beat !== undefined) {
+            if (!beats_1.BEAT_PATTERNS.includes(data.beat)) {
+                return new Error("invalid beat value");
             }
         }
     }
@@ -193,6 +205,13 @@ class Score extends EventTarget {
         this.data.speed = speed;
         this.emit("change");
     }
+    setBeat(beat) {
+        const error = this.validate({ beat });
+        if (error instanceof Error)
+            return error;
+        this.data.beat = beat;
+        this.emit("change");
+    }
     randomize(measureIndex, callback = u.random) {
         const measure = this.data.measures.at(measureIndex);
         if (!measure) {
@@ -262,6 +281,7 @@ class Score extends EventTarget {
     }
     // リソースを完全解放する（使い捨て。destroy 後の再利用は想定しない）。
     destroy() {
+        var _a;
         clearTimeout(this.timer);
         this.timer = undefined;
         this.playing = false;
@@ -270,6 +290,12 @@ class Score extends EventTarget {
                 tone.destroy();
             }
             this.tones = undefined;
+        }
+        (_a = this.drum) === null || _a === void 0 ? void 0 : _a.disconnect();
+        this.drum = undefined;
+        if (this.drumGain) {
+            this.drumGain.disconnect();
+            this.drumGain = undefined;
         }
         if (this.masterGain) {
             this.masterGain.disconnect();
@@ -295,7 +321,8 @@ class Score extends EventTarget {
             this.process();
             return;
         }
-        const frame = measure.frames[this.currentFrame % 16];
+        const frameInMeasure = this.currentFrame % 16;
+        const frame = measure.frames[frameInMeasure];
         if (measure.chord !== this.currentChord) {
             this.currentChord = measure.chord;
             const notes = (0, chords_notes_1.getChordNotes)(this.currentChord);
@@ -308,6 +335,9 @@ class Score extends EventTarget {
                 this.tones[index].ping(1 / this.data.speed);
             }
         });
+        if (this.data.beat && this.drum) {
+            this.drum.ping(this.data.beat, frameInMeasure, 1 / this.data.speed);
+        }
         this.currentFrame =
             (this.currentFrame + 1) % (this.data.measures.length * 16);
         this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);

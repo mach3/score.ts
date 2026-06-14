@@ -1,5 +1,7 @@
+import { BEAT_PATTERNS } from "../const/beats";
 import { CHORD_NAMES, getChordNotes, } from "../const/chords_notes";
 import { getPreset, PRESET_NAMES } from "../const/presets";
+import { Drum } from "./Drum";
 import { Tone } from "./Tone";
 const u = {
     // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
@@ -59,6 +61,11 @@ export class Score extends EventTarget {
         this.masterGain = this.context.createGain();
         this.masterGain.gain.value = 1 / 16;
         this.masterGain.connect(this.context.destination);
+        this.drumGain = this.context.createGain();
+        this.drumGain.gain.value = 0.5;
+        this.drumGain.connect(this.context.destination);
+        this.drum = new Drum();
+        this.drum.connect(this.context, this.drumGain);
         this.initTones();
     }
     init(data) {
@@ -100,6 +107,11 @@ export class Score extends EventTarget {
         if (data.preset !== undefined) {
             if (!PRESET_NAMES.includes(data.preset)) {
                 return new Error("invalid preset value");
+            }
+        }
+        if (data.beat !== undefined) {
+            if (!BEAT_PATTERNS.includes(data.beat)) {
+                return new Error("invalid beat value");
             }
         }
     }
@@ -190,6 +202,13 @@ export class Score extends EventTarget {
         this.data.speed = speed;
         this.emit("change");
     }
+    setBeat(beat) {
+        const error = this.validate({ beat });
+        if (error instanceof Error)
+            return error;
+        this.data.beat = beat;
+        this.emit("change");
+    }
     randomize(measureIndex, callback = u.random) {
         const measure = this.data.measures.at(measureIndex);
         if (!measure) {
@@ -259,6 +278,7 @@ export class Score extends EventTarget {
     }
     // リソースを完全解放する（使い捨て。destroy 後の再利用は想定しない）。
     destroy() {
+        var _a;
         clearTimeout(this.timer);
         this.timer = undefined;
         this.playing = false;
@@ -267,6 +287,12 @@ export class Score extends EventTarget {
                 tone.destroy();
             }
             this.tones = undefined;
+        }
+        (_a = this.drum) === null || _a === void 0 ? void 0 : _a.disconnect();
+        this.drum = undefined;
+        if (this.drumGain) {
+            this.drumGain.disconnect();
+            this.drumGain = undefined;
         }
         if (this.masterGain) {
             this.masterGain.disconnect();
@@ -292,7 +318,8 @@ export class Score extends EventTarget {
             this.process();
             return;
         }
-        const frame = measure.frames[this.currentFrame % 16];
+        const frameInMeasure = this.currentFrame % 16;
+        const frame = measure.frames[frameInMeasure];
         if (measure.chord !== this.currentChord) {
             this.currentChord = measure.chord;
             const notes = getChordNotes(this.currentChord);
@@ -305,6 +332,9 @@ export class Score extends EventTarget {
                 this.tones[index].ping(1 / this.data.speed);
             }
         });
+        if (this.data.beat && this.drum) {
+            this.drum.ping(this.data.beat, frameInMeasure, 1 / this.data.speed);
+        }
         this.currentFrame =
             (this.currentFrame + 1) % (this.data.measures.length * 16);
         this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);

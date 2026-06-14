@@ -1,5 +1,7 @@
+import { type BeatPattern } from "../const/beats";
 import { type ChordName } from "../const/chords_notes";
 import { type PresetName } from "../const/presets";
+import { Drum } from "./Drum";
 import { Tone } from "./Tone";
 type ScoreEventName = "change" | "process" | "playingchange";
 type ScoreEvent<K extends ScoreEventName> = Event & {
@@ -16,6 +18,7 @@ export interface IScoreData {
     measures: Measure[];
     speed: number;
     preset?: PresetName;
+    beat?: BeatPattern;
 }
 interface IScore {
     connect: (context: AudioContext) => void;
@@ -26,6 +29,7 @@ interface IScore {
     setChord: (measureIndex: number, chord: ChordName) => Error | undefined;
     setPreset: (preset: PresetName) => Error | undefined;
     setSpeed: (speed: number) => Error | undefined;
+    setBeat: (beat: BeatPattern | undefined) => Error | undefined;
     randomize: (measureIndex: number, callback?: () => boolean) => Error | undefined;
     sprinkle: (measureIndex: number) => Error | undefined;
     clear: (measureIndex: number) => Error | undefined;
@@ -37,6 +41,8 @@ interface IScore {
 export declare class Score extends EventTarget implements IScore {
     context?: AudioContext;
     masterGain?: GainNode;
+    drumGain?: GainNode;
+    drum?: Drum;
     data: IScoreData;
     tones?: Array<Tone>;
     timer?: number;
@@ -57,6 +63,7 @@ export declare class Score extends EventTarget implements IScore {
     setChord(measureIndex: number, chord: ChordName): Error | undefined;
     setPreset(preset: PresetName): Error | undefined;
     setSpeed(speed: number): Error | undefined;
+    setBeat(beat: BeatPattern | undefined): Error | undefined;
     randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     clear(measureIndex: number): Error | undefined;
     sprinkle(measureIndex: number): Error | undefined;

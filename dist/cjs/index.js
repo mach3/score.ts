@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Tone = exports.Score = exports.PRESET_NAMES = exports.CHORD_NAMES = void 0;
+exports.Tone = exports.Score = exports.PRESET_NAMES = exports.CHORD_NAMES = exports.BEAT_PATTERNS = void 0;
+var beats_1 = require("./const/beats");
+Object.defineProperty(exports, "BEAT_PATTERNS", { enumerable: true, get: function () { return beats_1.BEAT_PATTERNS; } });
 var chords_notes_1 = require("./const/chords_notes");
 Object.defineProperty(exports, "CHORD_NAMES", { enumerable: true, get: function () { return chords_notes_1.CHORD_NAMES; } });
 var presets_1 = require("./const/presets");
