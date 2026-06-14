@@ -1,4 +1,5 @@
 import {
+  type BeatPattern,
   type ChordName,
   type IScoreData,
   type PresetName,
@@ -27,8 +28,13 @@ describe("Score Class", () => {
 
   const mockAudioContext = {
     currentTime: 0,
+    sampleRate: 44100,
     createOscillator: jest.fn(() => ({
-      frequency: { value: 0 },
+      frequency: {
+        value: 0,
+        setValueAtTime: jest.fn(),
+        exponentialRampToValueAtTime: jest.fn(),
+      },
       type: "sine",
       connect: jest.fn(),
       start: jest.fn(),
@@ -48,6 +54,21 @@ describe("Score Class", () => {
       disconnect: jest.fn(),
     })),
     createPeriodicWave: jest.fn(() => ({})),
+    createBuffer: jest.fn(() => ({
+      getChannelData: jest.fn(() => new Float32Array(4410)),
+    })),
+    createBufferSource: jest.fn(() => ({
+      buffer: null,
+      connect: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+    })),
+    createBiquadFilter: jest.fn(() => ({
+      type: "bandpass",
+      frequency: { value: 0 },
+      Q: { value: 0 },
+      connect: jest.fn(),
+    })),
     close: jest.fn(),
     destination: {},
   };
@@ -339,6 +360,64 @@ describe("Score Class", () => {
     expect(score.sprinkle(5)).toBeInstanceOf(Error);
   });
 
+  test("setBeat sets beat pattern", () => {
+    const score = new Score();
+    expect(score.data.beat).toBeUndefined();
+    expect(score.setBeat("rock")).toBeUndefined();
+    expect(score.data.beat).toBe("rock");
+    expect(score.setBeat(undefined)).toBeUndefined();
+    expect(score.data.beat).toBeUndefined();
+  });
+
+  test("setBeat returns Error for invalid pattern", () => {
+    const score = new Score();
+    expect(score.setBeat("invalid" as BeatPattern)).toBeInstanceOf(Error);
+    expect(score.data.beat).toBeUndefined();
+  });
+
+  test("setBeat emits change event", () => {
+    const score = new Score();
+    const handler = jest.fn();
+    score.on("change", handler);
+    score.setBeat("pop");
+    expect(handler).toHaveBeenCalled();
+  });
+
+  test("init accepts beat in IScoreData", () => {
+    const score = new Score();
+    expect(score.init({ beat: "rock" })).toBeUndefined();
+    expect(score.data.beat).toBe("rock");
+    expect(score.init({ beat: "invalid" as BeatPattern })).toBeInstanceOf(
+      Error,
+    );
+    // エラー後も値は保持される
+    expect(score.data.beat).toBe("rock");
+  });
+
+  test("process triggers kick when beat is set and connected", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.setBeat("kick-4");
+    mockAudioContext.createOscillator.mockClear();
+    score.play(); // frame 0 は kick-4 のキックフレーム
+    expect(mockAudioContext.createOscillator).toHaveBeenCalled();
+    score.stop();
+  });
+
+  test("process triggers hat when beat with hat frames is set and connected", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.setBeat("rock"); // hat: [0,2,4,...] — frame 0 にキック＋ハイハット
+    mockAudioContext.createBufferSource.mockClear();
+    mockAudioContext.createBiquadFilter.mockClear();
+    score.play();
+    expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
+    expect(mockAudioContext.createBiquadFilter).toHaveBeenCalled();
+    score.stop();
+  });
+
   test("play", () => {
     jest.useFakeTimers();
     const score = new Score();
@@ -418,6 +497,7 @@ describe("Score Class", () => {
     const tones = score.tones;
     const oscillators = tones?.map((tone) => tone.oscillator);
     const masterGain = score.masterGain;
+    const drumGain = score.drumGain;
     score.play();
 
     score.destroy();
@@ -427,6 +507,8 @@ describe("Score Class", () => {
       expect(osc?.stop).toHaveBeenCalled();
       expect(osc?.disconnect).toHaveBeenCalled();
     });
+    // ドラムゲインを disconnect
+    expect(drumGain?.disconnect).toHaveBeenCalled();
     // マスターゲインを disconnect
     expect(masterGain?.disconnect).toHaveBeenCalled();
     // 各 Tone・Score の参照がクリアされる
@@ -434,6 +516,7 @@ describe("Score Class", () => {
       expect(tone.oscillator).toBeUndefined();
     }
     expect(score.tones).toBeUndefined();
+    expect(score.drumGain).toBeUndefined();
     expect(score.masterGain).toBeUndefined();
     expect(score.context).toBeUndefined();
   });
