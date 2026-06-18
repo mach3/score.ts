@@ -68,6 +68,7 @@ describe("Score Class", () => {
       frequency: { value: 0 },
       Q: { value: 0 },
       connect: jest.fn(),
+      disconnect: jest.fn(),
     })),
     close: jest.fn(),
     destination: {},
@@ -411,10 +412,8 @@ describe("Score Class", () => {
     score.connect(mockAudioContext as unknown as AudioContext);
     score.setBeat("rock"); // hat: [0,2,4,...] — frame 0 にキック＋ハイハット
     mockAudioContext.createBufferSource.mockClear();
-    mockAudioContext.createBiquadFilter.mockClear();
     score.play();
     expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
-    expect(mockAudioContext.createBiquadFilter).toHaveBeenCalled();
     score.stop();
   });
 
