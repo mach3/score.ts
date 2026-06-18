@@ -124,6 +124,7 @@ export class Score extends EventTarget implements IScore {
   }
 
   connect(context?: AudioContext) {
+    if (this.context) return;
     // 引数なしで自前生成した context のみ destroy() で close する（外部渡しは呼び出し側の所有物）。
     this.ownsContext = !context;
     this.context = context || new AudioContext();

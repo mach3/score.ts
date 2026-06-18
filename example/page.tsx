@@ -361,9 +361,7 @@ export function Page() {
         <ControlButton
           type="button"
           onClick={() => {
-            if (!score?.context) {
-              score?.connect();
-            }
+            score?.connect();
             score?.play();
           }}
         >
