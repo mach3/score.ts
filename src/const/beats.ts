@@ -32,6 +32,14 @@ const BEATS_MAP: Record<BeatPattern, BeatDefinition> = {
   },
 };
 
-export function getBeatDefinition(pattern: BeatPattern): BeatDefinition {
-  return BEATS_MAP[pattern];
+/**
+ * ビートパターン名からビート定義を取得する
+ * @throws ビートパターンが見つからない場合
+ */
+export function getBeatDefinition(pattern: string): BeatDefinition {
+  const entry = BEATS_MAP[pattern as BeatPattern];
+  if (!entry) {
+    throw new Error(`Beat pattern "${pattern}" not found`);
+  }
+  return entry;
 }
