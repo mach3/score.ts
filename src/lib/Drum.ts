@@ -44,6 +44,11 @@ export class Drum {
     gain.gain.setValueAtTime(0.8, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+
     osc.start(now);
     osc.stop(now + dur);
   }
@@ -68,6 +73,13 @@ export class Drum {
     source.connect(filter);
     filter.connect(gain);
     gain.connect(this.destination);
+
+    source.onended = () => {
+      source.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
+
     source.start(now);
     source.stop(now + dur);
   }
