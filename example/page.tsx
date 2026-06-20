@@ -10,6 +10,8 @@ import {
 import { IoSparkles } from "react-icons/io5";
 import styled from "styled-components";
 import {
+  BEAT_PATTERNS,
+  type BeatPattern,
   CHORD_NAMES,
   type ChordName,
   type IScoreData,
@@ -166,6 +168,33 @@ function PresetSelect({ value, onChange }: PresetSelectProps) {
     >
       {PRESET_NAMES.map((preset) => {
         return <option key={preset}>{preset}</option>;
+      })}
+    </SelectBox>
+  );
+}
+
+interface BeatSelectProps {
+  value: BeatPattern | undefined;
+  onChange: (value: BeatPattern | undefined) => void;
+}
+
+function BeatSelect({ value, onChange }: BeatSelectProps) {
+  return (
+    <SelectBox
+      value={value ?? ""}
+      onChange={(e) =>
+        onChange(
+          e.target.value === "" ? undefined : (e.target.value as BeatPattern),
+        )
+      }
+    >
+      <option value="">Beat: Off</option>
+      {BEAT_PATTERNS.map((pattern) => {
+        return (
+          <option key={pattern} value={pattern}>
+            {pattern}
+          </option>
+        );
       })}
     </SelectBox>
   );
@@ -332,9 +361,7 @@ export function Page() {
         <ControlButton
           type="button"
           onClick={() => {
-            if (!score?.context) {
-              score?.connect();
-            }
+            score?.connect();
             score?.play();
           }}
         >
@@ -357,6 +384,12 @@ export function Page() {
             }
           }}
         />
+        <BeatSelect
+          value={data?.beat}
+          onChange={(value) => {
+            score?.setBeat(value);
+          }}
+        />
         <input
           type="range"
           min="4"
@@ -364,6 +397,16 @@ export function Page() {
           value={score?.data.speed ?? 8}
           onChange={(e) => {
             score?.setSpeed(Number(e.target.value));
+          }}
+        />
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          defaultValue="1"
+          onChange={(e) => {
+            score?.setVolume(Number(e.target.value));
           }}
         />
       </ControlBase>

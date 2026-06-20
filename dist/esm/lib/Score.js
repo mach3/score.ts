@@ -1,5 +1,7 @@
+import { BEAT_PATTERNS } from "../const/beats";
 import { CHORD_NAMES, getChordNotes, } from "../const/chords_notes";
 import { getPreset, PRESET_NAMES } from "../const/presets";
+import { Drum } from "./Drum";
 import { Tone } from "./Tone";
 const u = {
     // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
@@ -41,6 +43,7 @@ export class Score extends EventTarget {
     constructor() {
         super();
         this.playing = false;
+        this.volume = 1.0;
         this.currentFrame = 0;
         this.ownsContext = false;
         this.data = u.deepClone(DEFAULT_SCORE_DATA);
@@ -53,12 +56,25 @@ export class Score extends EventTarget {
         this.dispatchEvent(new Event(type));
     }
     connect(context) {
+        if (this.context)
+            return;
         // 引数なしで自前生成した context のみ destroy() で close する（外部渡しは呼び出し側の所有物）。
         this.ownsContext = !context;
         this.context = context || new AudioContext();
+        // masterGain は真のマスター。chordGain / drumGain を集約して destination へ送る。
         this.masterGain = this.context.createGain();
-        this.masterGain.gain.value = 1 / 16;
+        this.masterGain.gain.value = this.volume;
         this.masterGain.connect(this.context.destination);
+        // chordGain は 16 ノート同時発音時のクリッピングを防ぐためのバスゲイン。
+        this.chordGain = this.context.createGain();
+        this.chordGain.gain.value = 1 / 16;
+        this.chordGain.connect(this.masterGain);
+        // drumGain はドラム専用のバスゲイン。chordGain と独立して音量バランスを取る。
+        this.drumGain = this.context.createGain();
+        this.drumGain.gain.value = 0.5;
+        this.drumGain.connect(this.masterGain);
+        this.drum = new Drum();
+        this.drum.connect(this.context, this.drumGain);
         this.initTones();
     }
     init(data) {
@@ -102,6 +118,11 @@ export class Score extends EventTarget {
                 return new Error("invalid preset value");
             }
         }
+        if (data.beat !== undefined) {
+            if (!BEAT_PATTERNS.includes(data.beat)) {
+                return new Error("invalid beat value");
+            }
+        }
     }
     initTones() {
         var _a;
@@ -116,7 +137,7 @@ export class Score extends EventTarget {
         const preset = getPreset((_a = this.data.preset) !== null && _a !== void 0 ? _a : "Piano");
         this.tones = getChordNotes(this.currentChord).map((frequency) => {
             const tone = new Tone();
-            tone.connect(this.context, frequency, preset, this.masterGain);
+            tone.connect(this.context, frequency, preset, this.chordGain);
             tone.start();
             return tone;
         });
@@ -190,6 +211,25 @@ export class Score extends EventTarget {
         this.data.speed = speed;
         this.emit("change");
     }
+    setBeat(beat) {
+        const error = this.validate({ beat });
+        if (error instanceof Error)
+            return error;
+        this.data.beat = beat;
+        this.emit("change");
+    }
+    // volume は data に含まれない runtime state のため "change" は emit しない。
+    setVolume(volume) {
+        if (!(volume >= 0 && volume <= 1)) {
+            return new Error("volume must be between 0 and 1");
+        }
+        if (this.volume === volume)
+            return;
+        this.volume = volume;
+        if (this.masterGain) {
+            this.masterGain.gain.value = volume;
+        }
+    }
     randomize(measureIndex, callback = u.random) {
         const measure = this.data.measures.at(measureIndex);
         if (!measure) {
@@ -259,6 +299,7 @@ export class Score extends EventTarget {
     }
     // リソースを完全解放する（使い捨て。destroy 後の再利用は想定しない）。
     destroy() {
+        var _a;
         clearTimeout(this.timer);
         this.timer = undefined;
         this.playing = false;
@@ -267,6 +308,16 @@ export class Score extends EventTarget {
                 tone.destroy();
             }
             this.tones = undefined;
+        }
+        (_a = this.drum) === null || _a === void 0 ? void 0 : _a.disconnect();
+        this.drum = undefined;
+        if (this.drumGain) {
+            this.drumGain.disconnect();
+            this.drumGain = undefined;
+        }
+        if (this.chordGain) {
+            this.chordGain.disconnect();
+            this.chordGain = undefined;
         }
         if (this.masterGain) {
             this.masterGain.disconnect();
@@ -292,7 +343,8 @@ export class Score extends EventTarget {
             this.process();
             return;
         }
-        const frame = measure.frames[this.currentFrame % 16];
+        const frameInMeasure = this.currentFrame % 16;
+        const frame = measure.frames[frameInMeasure];
         if (measure.chord !== this.currentChord) {
             this.currentChord = measure.chord;
             const notes = getChordNotes(this.currentChord);
@@ -305,6 +357,9 @@ export class Score extends EventTarget {
                 this.tones[index].ping(1 / this.data.speed);
             }
         });
+        if (this.data.beat && this.drum) {
+            this.drum.ping(this.data.beat, frameInMeasure, 1 / this.data.speed);
+        }
         this.currentFrame =
             (this.currentFrame + 1) % (this.data.measures.length * 16);
         this.timer = setTimeout(() => this.process(), 1000 / this.data.speed);
