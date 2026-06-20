@@ -46,6 +46,7 @@ class Score extends EventTarget {
     constructor() {
         super();
         this.playing = false;
+        this.volume = 1.0;
         this.currentFrame = 0;
         this.ownsContext = false;
         this.data = u.deepClone(DEFAULT_SCORE_DATA);
@@ -65,7 +66,7 @@ class Score extends EventTarget {
         this.context = context || new AudioContext();
         // masterGain は真のマスター。chordGain / drumGain を集約して destination へ送る。
         this.masterGain = this.context.createGain();
-        this.masterGain.gain.value = 1.0;
+        this.masterGain.gain.value = this.volume;
         this.masterGain.connect(this.context.destination);
         // chordGain は 16 ノート同時発音時のクリッピングを防ぐためのバスゲイン。
         this.chordGain = this.context.createGain();
@@ -219,6 +220,18 @@ class Score extends EventTarget {
             return error;
         this.data.beat = beat;
         this.emit("change");
+    }
+    // volume は data に含まれない runtime state のため "change" は emit しない。
+    setVolume(volume) {
+        if (!(volume >= 0 && volume <= 1)) {
+            return new Error("volume must be between 0 and 1");
+        }
+        if (this.volume === volume)
+            return;
+        this.volume = volume;
+        if (this.masterGain) {
+            this.masterGain.gain.value = volume;
+        }
     }
     randomize(measureIndex, callback = u.random) {
         const measure = this.data.measures.at(measureIndex);

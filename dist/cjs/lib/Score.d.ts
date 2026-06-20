@@ -30,6 +30,7 @@ interface IScore {
     setPreset: (preset: PresetName) => Error | undefined;
     setSpeed: (speed: number) => Error | undefined;
     setBeat: (beat: BeatPattern | undefined) => Error | undefined;
+    setVolume: (volume: number) => Error | undefined;
     randomize: (measureIndex: number, callback?: () => boolean) => Error | undefined;
     sprinkle: (measureIndex: number) => Error | undefined;
     clear: (measureIndex: number) => Error | undefined;
@@ -48,6 +49,7 @@ export declare class Score extends EventTarget implements IScore {
     tones?: Array<Tone>;
     timer?: number;
     playing: boolean;
+    volume: number;
     currentChord: ChordName;
     currentFrame: number;
     private ownsContext;
@@ -65,6 +67,7 @@ export declare class Score extends EventTarget implements IScore {
     setPreset(preset: PresetName): Error | undefined;
     setSpeed(speed: number): Error | undefined;
     setBeat(beat: BeatPattern | undefined): Error | undefined;
+    setVolume(volume: number): Error | undefined;
     randomize(measureIndex: number, callback?: () => boolean): Error | undefined;
     clear(measureIndex: number): Error | undefined;
     sprinkle(measureIndex: number): Error | undefined;
