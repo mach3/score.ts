@@ -33,46 +33,20 @@ export class Drum {
     if (def.hat.includes(frameInMeasure)) this.pingHat(frameDuration);
   }
 
-  private pingKick(frameDuration: number) {
-    if (!this.context || !this.destination) return;
-    const osc = this.context.createOscillator();
+  private scheduleSource(
+    source: AudioScheduledSourceNode,
+    destination: AudioNode,
+    peak: number,
+    now: number,
+    dur: number,
+  ) {
+    if (!this.context) return;
     const gain = this.context.createGain();
-    osc.connect(gain);
-    gain.connect(this.destination);
-
-    const now = this.context.currentTime;
-    const dur = Math.min(frameDuration, 0.3);
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.exponentialRampToValueAtTime(50, now + dur * 0.5);
-
-    gain.gain.setValueAtTime(0.8, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
-
-    osc.start(now);
-    osc.stop(now + dur);
-  }
-
-  private pingHat(frameDuration: number) {
-    if (!this.context || !this.noiseBuffer || !this.hatFilter) return;
-
-    const source = this.context.createBufferSource();
-    source.buffer = this.noiseBuffer;
-
-    const gain = this.context.createGain();
-    const dur = Math.min(frameDuration * 0.7, 0.1);
-    const now = this.context.currentTime;
-    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.setValueAtTime(peak, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     source.connect(gain);
-    gain.connect(this.hatFilter);
+    gain.connect(destination);
 
     source.onended = () => {
       source.disconnect();
@@ -81,6 +55,29 @@ export class Drum {
 
     source.start(now);
     source.stop(now + dur);
+  }
+
+  private pingKick(frameDuration: number) {
+    if (!this.context || !this.destination) return;
+    const osc = this.context.createOscillator();
+    const now = this.context.currentTime;
+    const dur = Math.min(frameDuration, 0.3);
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + dur * 0.5);
+
+    this.scheduleSource(osc, this.destination, 0.8, now, dur);
+  }
+
+  private pingHat(frameDuration: number) {
+    if (!this.context || !this.noiseBuffer || !this.hatFilter) return;
+    const source = this.context.createBufferSource();
+    source.buffer = this.noiseBuffer;
+    const now = this.context.currentTime;
+    const dur = Math.min(frameDuration * 0.7, 0.1);
+
+    this.scheduleSource(source, this.hatFilter, 0.3, now, dur);
   }
 
   disconnect() {
