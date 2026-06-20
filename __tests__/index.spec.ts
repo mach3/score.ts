@@ -384,6 +384,44 @@ describe("Score Class", () => {
     expect(handler).toHaveBeenCalled();
   });
 
+  test("setVolume sets volume", () => {
+    const score = new Score();
+    expect(score.volume).toBe(1.0);
+    expect(score.setVolume(0.5)).toBeUndefined();
+    expect(score.volume).toBe(0.5);
+  });
+
+  test("setVolume returns Error for out-of-range values", () => {
+    const score = new Score();
+    expect(score.setVolume(-0.1)).toBeInstanceOf(Error);
+    expect(score.setVolume(1.1)).toBeInstanceOf(Error);
+    expect(score.setVolume(Number.NaN)).toBeInstanceOf(Error);
+    // エラー後も値は保持される
+    expect(score.volume).toBe(1.0);
+  });
+
+  test("setVolume updates masterGain after connect", () => {
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.setVolume(0.3);
+    expect(score.masterGain?.gain.value).toBe(0.3);
+  });
+
+  test("setVolume before connect is applied to masterGain at connect", () => {
+    const score = new Score();
+    score.setVolume(0.4);
+    score.connect(mockAudioContext as unknown as AudioContext);
+    expect(score.masterGain?.gain.value).toBe(0.4);
+  });
+
+  test("setVolume does not emit change", () => {
+    const score = new Score();
+    const handler = jest.fn();
+    score.on("change", handler);
+    score.setVolume(0.5);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   test("init accepts beat in IScoreData", () => {
     const score = new Score();
     expect(score.init({ beat: "rock" })).toBeUndefined();

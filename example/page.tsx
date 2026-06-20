@@ -399,6 +399,16 @@ export function Page() {
             score?.setSpeed(Number(e.target.value));
           }}
         />
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          defaultValue="1"
+          onChange={(e) => {
+            score?.setVolume(Number(e.target.value));
+          }}
+        />
       </ControlBase>
     </PageBase>
   );

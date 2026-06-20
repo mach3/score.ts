@@ -81,6 +81,7 @@ interface IScore {
   setPreset: (preset: PresetName) => Error | undefined;
   setSpeed: (speed: number) => Error | undefined;
   setBeat: (beat: BeatPattern | undefined) => Error | undefined;
+  setVolume: (volume: number) => Error | undefined;
   randomize: (
     measureIndex: number,
     callback?: () => boolean,
@@ -103,6 +104,7 @@ export class Score extends EventTarget implements IScore {
   tones?: Array<Tone>;
   timer?: number;
   playing = false;
+  volume = 1.0;
   currentChord: ChordName;
   currentFrame = 0;
   private ownsContext = false;
@@ -131,7 +133,7 @@ export class Score extends EventTarget implements IScore {
     this.context = context || new AudioContext();
     // masterGain は真のマスター。chordGain / drumGain を集約して destination へ送る。
     this.masterGain = this.context.createGain();
-    this.masterGain.gain.value = 1.0;
+    this.masterGain.gain.value = this.volume;
     this.masterGain.connect(this.context.destination);
     // chordGain は 16 ノート同時発音時のクリッピングを防ぐためのバスゲイン。
     this.chordGain = this.context.createGain();
@@ -304,6 +306,18 @@ export class Score extends EventTarget implements IScore {
     if (error instanceof Error) return error;
     this.data.beat = beat;
     this.emit("change");
+  }
+
+  // volume は data に含まれない runtime state のため "change" は emit しない。
+  setVolume(volume: number): Error | undefined {
+    if (!(volume >= 0 && volume <= 1)) {
+      return new Error("volume must be between 0 and 1");
+    }
+    if (this.volume === volume) return;
+    this.volume = volume;
+    if (this.masterGain) {
+      this.masterGain.gain.value = volume;
+    }
   }
 
   randomize(

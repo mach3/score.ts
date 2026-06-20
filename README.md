@@ -64,6 +64,7 @@ score.stop();
 | プロパティ | 型 | 説明 |
 |-----------|-----|------|
 | `data` | `IScoreData` | スコアデータ |
+| `volume` | `number` | マスター音量（0.0〜1.0、デフォルト 1.0） |
 | `playing` | `boolean` | 再生中かどうか |
 | `currentFrame` | `number` | 現在の再生位置（0〜小節数×16） |
 | `currentChord` | `ChordName` | 現在再生中のコード |
@@ -81,6 +82,7 @@ score.stop();
 | `setPreset(preset: PresetName)` | 音色プリセットを変更 |
 | `setSpeed(speed: number)` | 再生速度を設定（フレーム/秒） |
 | `setBeat(beat: BeatPattern \| undefined)` | ビートパターンを設定。`undefined` で無効化 |
+| `setVolume(volume: number)` | マスター音量を設定（0.0〜1.0） |
 | `randomize(measureIndex, callback?)` | 指定小節をランダム化（全ノートを上書き） |
 | `sprinkle(measureIndex)` | 指定小節の各フレームに1〜2ノートをランダム追加（既存ノートを保持） |
 | `clear(measureIndex)` | 指定小節の全ノートを消去 |
