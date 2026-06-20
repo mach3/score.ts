@@ -417,6 +417,23 @@ describe("Score Class", () => {
     score.stop();
   });
 
+  test("setBeat(undefined) stops drum triggering on subsequent process ticks", () => {
+    jest.useFakeTimers();
+    const score = new Score();
+    score.connect(mockAudioContext as unknown as AudioContext);
+    score.setBeat("kick-4"); // frame 0, 4, 8, 12 で kick
+    mockAudioContext.createOscillator.mockClear();
+    score.play(); // frame 0 で kick が発火
+    expect(mockAudioContext.createOscillator).toHaveBeenCalled();
+
+    score.setBeat(undefined);
+    mockAudioContext.createOscillator.mockClear();
+    // 次の kick フレーム（frame 4）まで進める
+    jest.advanceTimersByTime((1000 / score.data.speed) * 4);
+    expect(mockAudioContext.createOscillator).not.toHaveBeenCalled();
+    score.stop();
+  });
+
   test("play", () => {
     jest.useFakeTimers();
     const score = new Score();
