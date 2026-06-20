@@ -51,10 +51,9 @@ pnpm run build:example
   - 型強化された `on(type, listener, options?)` ヘルパーを提供（標準の `addEventListener` も利用可能）
   - 最大16小節、各小節は16フレーム × 16ノートのグリッド構造
   - 再生ループは `setTimeout` ベース。`process()` が再帰的にフレームを進行
-  - マスターゲインノード（`1/16`）で16音の同時発音時のクリッピングを防止
+  - 3層のゲイン階層: `chordGain`（1/16, 16音クリッピング防止）と `drumGain`（0.5, ドラム音量バランス）を `masterGain`（1.0, 真のマスター）配下に集約し、`context.destination` へ送る
   - 操作メソッド（`toggleNote`, `addMeasure`, `setChord`, `setPreset`, `setBeat`, `seek` 等）は失敗時に `Error` を返し、成功時は `undefined` を返すパターン（throw しない）
-  - `drumGain`（gain: 0.5）を `masterGain` とは独立して `context.destination` に直結。ドラム音量が 1/16 正規化の対象外になる
-  - `destroy()` で AudioContext（自前生成時のみ）・masterGain・drumGain・Drum・Tone 全インスタンスを完全解放（使い捨て。以降の再利用不可）
+  - `destroy()` で AudioContext（自前生成時のみ）・masterGain・chordGain・drumGain・Drum・Tone 全インスタンスを完全解放（使い捨て。以降の再利用不可）
 
 - **Drum** (`src/lib/Drum.ts`): ドラム音合成クラス
   - キック: 使い捨て OscillatorNode（sine, 150→50Hz 周波数スウィープ）
