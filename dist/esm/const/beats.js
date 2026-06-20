@@ -23,6 +23,14 @@ const BEATS_MAP = {
         hat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     },
 };
+/**
+ * ビートパターン名からビート定義を取得する
+ * @throws ビートパターンが見つからない場合
+ */
 export function getBeatDefinition(pattern) {
-    return BEATS_MAP[pattern];
+    const entry = BEATS_MAP[pattern];
+    if (!entry) {
+        throw new Error(`Beat pattern "${pattern}" not found`);
+    }
+    return entry;
 }

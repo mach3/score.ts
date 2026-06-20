@@ -55,15 +55,23 @@ export class Score extends EventTarget {
         this.dispatchEvent(new Event(type));
     }
     connect(context) {
+        if (this.context)
+            return;
         // 引数なしで自前生成した context のみ destroy() で close する（外部渡しは呼び出し側の所有物）。
         this.ownsContext = !context;
         this.context = context || new AudioContext();
+        // masterGain は真のマスター。chordGain / drumGain を集約して destination へ送る。
         this.masterGain = this.context.createGain();
-        this.masterGain.gain.value = 1 / 16;
+        this.masterGain.gain.value = 1.0;
         this.masterGain.connect(this.context.destination);
+        // chordGain は 16 ノート同時発音時のクリッピングを防ぐためのバスゲイン。
+        this.chordGain = this.context.createGain();
+        this.chordGain.gain.value = 1 / 16;
+        this.chordGain.connect(this.masterGain);
+        // drumGain はドラム専用のバスゲイン。chordGain と独立して音量バランスを取る。
         this.drumGain = this.context.createGain();
         this.drumGain.gain.value = 0.5;
-        this.drumGain.connect(this.context.destination);
+        this.drumGain.connect(this.masterGain);
         this.drum = new Drum();
         this.drum.connect(this.context, this.drumGain);
         this.initTones();
@@ -128,7 +136,7 @@ export class Score extends EventTarget {
         const preset = getPreset((_a = this.data.preset) !== null && _a !== void 0 ? _a : "Piano");
         this.tones = getChordNotes(this.currentChord).map((frequency) => {
             const tone = new Tone();
-            tone.connect(this.context, frequency, preset, this.masterGain);
+            tone.connect(this.context, frequency, preset, this.chordGain);
             tone.start();
             return tone;
         });
@@ -293,6 +301,10 @@ export class Score extends EventTarget {
         if (this.drumGain) {
             this.drumGain.disconnect();
             this.drumGain = undefined;
+        }
+        if (this.chordGain) {
+            this.chordGain.disconnect();
+            this.chordGain = undefined;
         }
         if (this.masterGain) {
             this.masterGain.disconnect();

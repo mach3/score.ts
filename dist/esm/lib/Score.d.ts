@@ -41,6 +41,7 @@ interface IScore {
 export declare class Score extends EventTarget implements IScore {
     context?: AudioContext;
     masterGain?: GainNode;
+    chordGain?: GainNode;
     drumGain?: GainNode;
     drum?: Drum;
     data: IScoreData;

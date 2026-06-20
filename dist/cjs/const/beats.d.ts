@@ -4,5 +4,9 @@ interface BeatDefinition {
     kick: number[];
     hat: number[];
 }
-export declare function getBeatDefinition(pattern: BeatPattern): BeatDefinition;
+/**
+ * ビートパターン名からビート定義を取得する
+ * @throws ビートパターンが見つからない場合
+ */
+export declare function getBeatDefinition(pattern: string): BeatDefinition;
 export {};
