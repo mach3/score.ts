@@ -1,6 +1,6 @@
 {
   "name": "score.ts",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "A 16-step sequencer library built with Web Audio API and TypeScript, featuring chord-based tone generation with 48 chords, 6 traditional scales, and 10 sound presets",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
