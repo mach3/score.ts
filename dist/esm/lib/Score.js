@@ -29,6 +29,7 @@ const createEmptyFrames = () => {
         return Array.from({ length: 16 }).map(() => 0);
     });
 };
+export const SPEED_RANGE = { min: 1, max: 16 };
 const DEFAULT_SCORE_DATA = {
     measures: [
         {
@@ -109,8 +110,10 @@ export class Score extends EventTarget {
             }
         }
         if (data.speed !== undefined) {
-            if (u.getType(data.speed) !== "Number" || data.speed <= 0) {
-                return new Error("invalid speed value");
+            if (!Number.isInteger(data.speed) ||
+                data.speed < SPEED_RANGE.min ||
+                data.speed > SPEED_RANGE.max) {
+                return new Error(`invalid speed value (must be an integer in [${SPEED_RANGE.min}, ${SPEED_RANGE.max}])`);
             }
         }
         if (data.preset !== undefined) {
@@ -205,9 +208,9 @@ export class Score extends EventTarget {
         this.emit("change");
     }
     setSpeed(speed) {
-        if (speed <= 0) {
-            return new Error("speed must be greater than zero");
-        }
+        const error = this.validate({ speed });
+        if (error instanceof Error)
+            return error;
         this.data.speed = speed;
         this.emit("change");
     }
