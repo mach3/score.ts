@@ -80,7 +80,7 @@ score.stop();
 | `toggleNote(measure, frame, note, value?)` | ノートのオン/オフを切り替え |
 | `setChord(measureIndex, chord)` | 指定小節のコードを変更 |
 | `setPreset(preset: PresetName)` | 音色プリセットを変更 |
-| `setSpeed(speed: number)` | 再生速度を設定（フレーム/秒） |
+| `setSpeed(speed: number)` | 再生速度を設定（フレーム/秒、1〜16の整数） |
 | `setBeat(beat: BeatPattern \| undefined)` | ビートパターンを設定。`undefined` で無効化 |
 | `setVolume(volume: number)` | マスター音量を設定（0.0〜1.0） |
 | `randomize(measureIndex, callback?)` | 指定小節をランダム化（全ノートを上書き） |
@@ -112,7 +112,7 @@ interface Measure {
 
 interface IScoreData {
   measures: Measure[];    // 小節の配列（最大16）
-  speed: number;          // 再生速度（フレーム/秒）
+  speed: number;          // 再生速度（フレーム/秒、1〜16の整数、デフォルト 8）
   preset?: PresetName;    // 音色プリセット名（デフォルト "Piano"）
   beat?: BeatPattern;     // ビートパターン名（省略時はドラムなし）
 }
