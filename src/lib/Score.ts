@@ -55,6 +55,8 @@ const createEmptyFrames = (): Fixed16Array<Fixed16Array<NumBool>> => {
   }) as Fixed16Array<Fixed16Array<NumBool>>;
 };
 
+export const SPEED_RANGE = { min: 1, max: 16 } as const;
+
 const DEFAULT_SCORE_DATA: IScoreData = {
   measures: [
     {
@@ -184,8 +186,14 @@ export class Score extends EventTarget implements IScore {
       }
     }
     if (data.speed !== undefined) {
-      if (u.getType(data.speed) !== "Number" || data.speed <= 0) {
-        return new Error("invalid speed value");
+      if (
+        !Number.isInteger(data.speed) ||
+        data.speed < SPEED_RANGE.min ||
+        data.speed > SPEED_RANGE.max
+      ) {
+        return new Error(
+          `invalid speed value (must be an integer in [${SPEED_RANGE.min}, ${SPEED_RANGE.max}])`,
+        );
       }
     }
     if (data.preset !== undefined) {
@@ -294,9 +302,8 @@ export class Score extends EventTarget implements IScore {
   }
 
   setSpeed(speed: number): Error | undefined {
-    if (speed <= 0) {
-      return new Error("speed must be greater than zero");
-    }
+    const error = this.validate({ speed });
+    if (error instanceof Error) return error;
     this.data.speed = speed;
     this.emit("change");
   }
