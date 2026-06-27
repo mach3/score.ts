@@ -20,6 +20,10 @@ export interface IScoreData {
     preset?: PresetName;
     beat?: BeatPattern;
 }
+export declare const SPEED_RANGE: {
+    readonly min: 1;
+    readonly max: 16;
+};
 interface IScore {
     connect: (context: AudioContext) => void;
     init: (data: Partial<IScoreData>) => void;

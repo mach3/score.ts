@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Score = void 0;
+exports.Score = exports.SPEED_RANGE = void 0;
 const beats_1 = require("../const/beats");
 const chords_notes_1 = require("../const/chords_notes");
 const presets_1 = require("../const/presets");
@@ -32,6 +32,7 @@ const createEmptyFrames = () => {
         return Array.from({ length: 16 }).map(() => 0);
     });
 };
+exports.SPEED_RANGE = { min: 1, max: 16 };
 const DEFAULT_SCORE_DATA = {
     measures: [
         {
@@ -112,8 +113,10 @@ class Score extends EventTarget {
             }
         }
         if (data.speed !== undefined) {
-            if (u.getType(data.speed) !== "Number" || data.speed <= 0) {
-                return new Error("invalid speed value");
+            if (!Number.isInteger(data.speed) ||
+                data.speed < exports.SPEED_RANGE.min ||
+                data.speed > exports.SPEED_RANGE.max) {
+                return new Error(`invalid speed value (must be an integer in [${exports.SPEED_RANGE.min}, ${exports.SPEED_RANGE.max}])`);
             }
         }
         if (data.preset !== undefined) {
@@ -208,9 +211,9 @@ class Score extends EventTarget {
         this.emit("change");
     }
     setSpeed(speed) {
-        if (speed <= 0) {
-            return new Error("speed must be greater than zero");
-        }
+        const error = this.validate({ speed });
+        if (error instanceof Error)
+            return error;
         this.data.speed = speed;
         this.emit("change");
     }
