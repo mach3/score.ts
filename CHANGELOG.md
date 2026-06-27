@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.8.0] - 2026-06-21
+
+### Features
+
+- `Score` クラスに `setBeat(beat: BeatPattern | undefined)` を追加: 9種類のビートパターン（`kick-2`, `kick-4`, `kick-8`, `triple`, `rock`, `pop`, `offbeat`, `shuffle`, `16beat`）を Web Audio API でリアルタイム合成。`undefined` で無効化
+- `Score` クラスに `setVolume(volume: number)` を追加: マスター音量制御（0.0〜1.0）。`Score.volume` プロパティで現在値を参照可能
+- `BeatPattern` 型と `BEAT_PATTERNS` 定数を export
+
+### Refactoring
+
+- ゲイン階層を 3 層構造に再編: `chordGain`（コード音）と `drumGain`（ドラム音）を `masterGain` 配下に集約
+
+---
+
 ## [v0.7.0] - 2026-06-13
 
 ### Features
