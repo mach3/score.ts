@@ -131,7 +131,8 @@ describe("Score Class", () => {
       } as unknown as IScoreData),
     ).toBeInstanceOf(Error);
 
-    // check speed
+    // check speed (range/type details are covered by the setSpeed test;
+    // here we only verify that init forwards validation for non-number input)
     expect(
       score.init({
         speed: "1" as unknown as IScoreData["speed"],
@@ -286,8 +287,29 @@ describe("Score Class", () => {
     expect(score.data.speed).toBe(8);
     score.setSpeed(4);
     expect(score.data.speed).toBe(4);
-    expect(score.setSpeed(0)).toBeInstanceOf(Error);
-    expect(score.setSpeed(-1)).toBeInstanceOf(Error);
+
+    // boundary values pass
+    for (const ok of [1, 16]) {
+      expect(score.setSpeed(ok)).toBeUndefined();
+      expect(score.data.speed).toBe(ok);
+    }
+
+    // out of range / non-integer / NaN / Infinity return Error and leave value unchanged
+    for (const bad of [
+      0,
+      -1,
+      0.5,
+      1.5,
+      7.3,
+      17,
+      100,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ]) {
+      expect(score.setSpeed(bad)).toBeInstanceOf(Error);
+      expect(score.data.speed).toBe(16);
+    }
   });
 
   test("randomize measure", () => {

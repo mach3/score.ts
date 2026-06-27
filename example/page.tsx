@@ -18,6 +18,7 @@ import {
   PRESET_NAMES,
   type PresetName,
   Score,
+  SPEED_RANGE,
 } from "../src";
 
 const PageBase = styled.div({
@@ -118,6 +119,19 @@ const ControlButton = styled.button({
 });
 
 const SelectBox = styled.select({});
+
+const SpeedControl = styled.div({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+});
+
+const SpeedValue = styled.span({
+  fontSize: 14,
+  color: "#333",
+  fontVariantNumeric: "tabular-nums",
+  minWidth: "4em",
+});
 
 interface NoteProps {
   value: 0 | 1;
@@ -390,15 +404,18 @@ export function Page() {
             score?.setBeat(value);
           }}
         />
-        <input
-          type="range"
-          min="4"
-          max="12"
-          value={score?.data.speed ?? 8}
-          onChange={(e) => {
-            score?.setSpeed(Number(e.target.value));
-          }}
-        />
+        <SpeedControl>
+          <input
+            type="range"
+            min={SPEED_RANGE.min}
+            max={SPEED_RANGE.max}
+            value={data?.speed ?? 8}
+            onChange={(e) => {
+              score?.setSpeed(Number(e.target.value));
+            }}
+          />
+          <SpeedValue>{data?.speed ?? 8} fps</SpeedValue>
+        </SpeedControl>
         <input
           type="range"
           min="0"
