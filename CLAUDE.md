@@ -95,7 +95,20 @@ interface IScoreData {
 
 Dual package: ESM (`dist/esm/`, module: ESNext) と CJS (`dist/cjs/`, module: CommonJS)。`tsconfig.esm.json` / `tsconfig.cjs.json` がそれぞれの設定。
 
+npm には未公開。`pnpm install github:mach3/score.ts` で GitHub から直接インストールする運用。
+
+## Testing
+
+- Jest は `testEnvironment: node`（jsdom ではない）。Web Audio API（AudioContext 等）は `__tests__/index.spec.ts` 内の手動モックで代替している
+
+## CI / Release
+
+- CI（`.github/workflows/ci.yml`）: Node 22/24 の matrix で `typecheck` → `test` → `lint` の順に実行
+- コミット・PR は Conventional Commits 形式（日本語 subject）。リリースは「Release vX.Y.Z (#N)」という専用 PR でバージョン更新と `CHANGELOG.md` 追記を行う
+- `production` タグを push すると `.github/workflows/pages.yml` が example アプリをビルドし GitHub Pages にデプロイする
+
 ## Code Style
 
 - Formatter/Linter: Biome（インデント: スペース2つ、クォート: ダブルクォート）
+- import は Biome の `organizeImports` で自動整列される
 - TypeScript strict モード有効
