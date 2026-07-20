@@ -4,10 +4,6 @@ import { getPreset, PRESET_NAMES } from "../const/presets";
 import { Drum } from "./Drum";
 import { Tone } from "./Tone";
 const u = {
-    // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
-    getType: (value) => {
-        return Object.prototype.toString.call(value).slice(8, -1);
-    },
     // biome-ignore lint/suspicious/noExplicitAny: JSON経由のディープクローンのため任意の型を受け取る
     deepClone: (obj) => {
         return JSON.parse(JSON.stringify(obj));
@@ -83,8 +79,8 @@ export class Score extends EventTarget {
         if (error instanceof Error) {
             return new Error(`validate(): ${error.message}`);
         }
-        Object.assign(this.data, u.deepClone(data));
         if (data) {
+            Object.assign(this.data, u.deepClone(data));
             this.emit("change");
         }
     }
@@ -92,18 +88,26 @@ export class Score extends EventTarget {
         if (!data)
             return;
         if (data.measures !== undefined) {
-            if (!Array.isArray(data.measures) || data.measures.length > 16) {
+            if (!Array.isArray(data.measures) ||
+                data.measures.length === 0 ||
+                data.measures.length > 16) {
                 return new Error("invalid measures values");
             }
             for (const measure of data.measures) {
+                if (measure === null || measure === undefined) {
+                    return new Error("invalid measure value");
+                }
                 if (!CHORD_NAMES.includes(measure.chord)) {
                     return new Error("invalid chord value");
                 }
                 if (!Array.isArray(measure.frames) ||
                     measure.frames.length !== 16 ||
-                    !measure.frames.every((frame) => {
-                        return (frame.length === 16 &&
-                            frame.every((note) => [0, 1].includes(note)));
+                    // Array.from() で穴を undefined に変換し、Array.prototype.every() が
+                    // 疎な配列の穴をスキップして未検証のまま true を返すのを防ぐ
+                    !Array.from(measure.frames).every((frame) => {
+                        return (Array.isArray(frame) &&
+                            frame.length === 16 &&
+                            Array.from(frame).every((note) => [0, 1].includes(note)));
                     })) {
                     return new Error("invalid frames values");
                 }

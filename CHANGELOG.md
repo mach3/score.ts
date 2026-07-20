@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.8.2] - 2026-07-20
+
+### Bug Fixes
+
+- `Score#validate()` が不正な入れ子構造（`measure`/`frame` が `null`/`undefined`/疎配列など）を渡された際に `TypeError` を throw せず `Error` を返すよう改善
+
+---
+
 ## [v0.8.1] - 2026-06-27
 
 ### Features
