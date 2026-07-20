@@ -154,6 +154,34 @@ describe("Score Class", () => {
     expect(score.init(dummyData)).toBeUndefined();
   });
 
+  test("validate rejects empty measures", () => {
+    const score = new Score();
+    expect(score.init({ measures: [] })).toBeInstanceOf(Error);
+  });
+
+  test("validate returns Error (not throws) for malformed nested structures", () => {
+    const score = new Score();
+
+    // measure が null / undefined / 非オブジェクト
+    for (const badMeasure of [null, undefined, 1, "A", []]) {
+      expect(
+        score.init({ measures: [badMeasure] } as unknown as IScoreData),
+      ).toBeInstanceOf(Error);
+    }
+
+    // frame が null / undefined / 非配列（length 16 の文字列は旧実装で length
+    // チェックを通過し frame.every で TypeError を throw していたケース）
+    for (const badFrame of [null, undefined, "0000000000000000"]) {
+      expect(
+        score.init({
+          measures: [
+            { chord: "A", frames: Array.from({ length: 16 }, () => badFrame) },
+          ],
+        } as unknown as IScoreData),
+      ).toBeInstanceOf(Error);
+    }
+  });
+
   test("manupulate measure", () => {
     const score = new Score();
     score.init(dummyData);

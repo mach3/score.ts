@@ -164,10 +164,17 @@ export class Score extends EventTarget implements IScore {
   validate(data?: Partial<IScoreData>) {
     if (!data) return;
     if (data.measures !== undefined) {
-      if (!Array.isArray(data.measures) || data.measures.length > 16) {
+      if (
+        !Array.isArray(data.measures) ||
+        data.measures.length === 0 ||
+        data.measures.length > 16
+      ) {
         return new Error("invalid measures values");
       }
       for (const measure of data.measures) {
+        if (u.getType(measure) !== "Object") {
+          return new Error("invalid measure value");
+        }
         if (!CHORD_NAMES.includes(measure.chord)) {
           return new Error("invalid chord value");
         }
@@ -176,6 +183,7 @@ export class Score extends EventTarget implements IScore {
           measure.frames.length !== 16 ||
           !measure.frames.every((frame) => {
             return (
+              Array.isArray(frame) &&
               frame.length === 16 &&
               frame.every((note) => [0, 1].includes(note))
             );
