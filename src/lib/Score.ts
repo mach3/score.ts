@@ -16,10 +16,6 @@ type Fixed16Array<T> = [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T];
 type NumBool = 0 | 1;
 
 const u = {
-  // biome-ignore lint/suspicious/noExplicitAny: 汎用ユーティリティのため任意の型を受け取る
-  getType: (value: any) => {
-    return Object.prototype.toString.call(value).slice(8, -1);
-  },
   // biome-ignore lint/suspicious/noExplicitAny: JSON経由のディープクローンのため任意の型を受け取る
   deepClone: (obj: any) => {
     return JSON.parse(JSON.stringify(obj));
@@ -155,8 +151,8 @@ export class Score extends EventTarget implements IScore {
     if (error instanceof Error) {
       return new Error(`validate(): ${error.message}`);
     }
-    Object.assign(this.data, u.deepClone(data));
     if (data) {
+      Object.assign(this.data, u.deepClone(data));
       this.emit("change");
     }
   }
@@ -172,7 +168,7 @@ export class Score extends EventTarget implements IScore {
         return new Error("invalid measures values");
       }
       for (const measure of data.measures) {
-        if (u.getType(measure) !== "Object") {
+        if (measure === null || measure === undefined) {
           return new Error("invalid measure value");
         }
         if (!CHORD_NAMES.includes(measure.chord)) {
@@ -181,11 +177,13 @@ export class Score extends EventTarget implements IScore {
         if (
           !Array.isArray(measure.frames) ||
           measure.frames.length !== 16 ||
-          !measure.frames.every((frame) => {
+          // Array.from() で穴を undefined に変換し、Array.prototype.every() が
+          // 疎な配列の穴をスキップして未検証のまま true を返すのを防ぐ
+          !Array.from(measure.frames).every((frame) => {
             return (
               Array.isArray(frame) &&
               frame.length === 16 &&
-              frame.every((note) => [0, 1].includes(note))
+              Array.from(frame).every((note) => [0, 1].includes(note))
             );
           })
         ) {

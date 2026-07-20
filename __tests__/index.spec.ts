@@ -162,8 +162,8 @@ describe("Score Class", () => {
   test("validate returns Error (not throws) for malformed nested structures", () => {
     const score = new Score();
 
-    // measure が null / undefined / 非オブジェクト
-    for (const badMeasure of [null, undefined, 1, "A", []]) {
+    // measure が null / undefined（.chord アクセスで TypeError を throw する唯一のケース）
+    for (const badMeasure of [null, undefined]) {
       expect(
         score.init({ measures: [badMeasure] } as unknown as IScoreData),
       ).toBeInstanceOf(Error);
@@ -180,6 +180,49 @@ describe("Score Class", () => {
         } as unknown as IScoreData),
       ).toBeInstanceOf(Error);
     }
+  });
+
+  test("validate rejects non-object, non-crashing measure values via chord check", () => {
+    const score = new Score();
+
+    // 1 / "A" / [] は .chord アクセスで安全に undefined を返すため、
+    // measure の null/undefined ガードでは捕まえず、既存の chord チェックで拒否される
+    for (const badMeasure of [1, "A", []]) {
+      expect(
+        score.init({ measures: [badMeasure] } as unknown as IScoreData),
+      ).toBeInstanceOf(Error);
+    }
+  });
+
+  test("validate rejects sparse (hole-containing) frames arrays", () => {
+    const score = new Score();
+
+    // frames 自体が疎配列（穴だらけ）。Array.prototype.every() は穴をスキップし
+    // コールバックが一度も呼ばれないと true を返すため、Array.from() での密配列化が必要
+    expect(
+      score.init({
+        measures: [{ chord: "A", frames: new Array(16) }],
+      } as unknown as IScoreData),
+    ).toBeInstanceOf(Error);
+
+    // frames は正常だが、各 frame の中身（note の配列）が疎配列
+    expect(
+      score.init({
+        measures: [
+          {
+            chord: "A",
+            frames: Array.from({ length: 16 }, () => new Array(16)),
+          },
+        ],
+      } as unknown as IScoreData),
+    ).toBeInstanceOf(Error);
+  });
+
+  test("init() with no arguments is a no-op and does not throw", () => {
+    const score = new Score();
+    const before = score.data;
+    expect(score.init()).toBeUndefined();
+    expect(score.data).toEqual(before);
   });
 
   test("manupulate measure", () => {
